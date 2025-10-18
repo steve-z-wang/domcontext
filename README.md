@@ -323,6 +323,10 @@ ruff check src/ tests/
 
 2. **Collapse text-wrapping elements** - Improve wrapper collapsing to also collapse elements that only wrap text (not just elements that wrap other elements). Currently, `<a><span>text</span></a>` keeps the `span`, but it should be collapsed to `<a>text</a>` if the span has no attributes. Exception: Don't collapse interactive elements (button, input, a, select, textarea, etc.) even when they only wrap text, as these are semantically meaningful.
 
+### Evaluation & Benchmarking
+
+3. **Mind2Web dataset evaluation** - Conduct comprehensive testing on the [Mind2Web dataset](https://osu-nlp-group.github.io/Mind2Web/) to evaluate DOM context quality, token reduction rates, and element selection accuracy across diverse real-world websites. Report will include performance metrics, edge cases discovered, and comparison with baseline HTML parsing.
+
 ---
 
 ## Contributing
