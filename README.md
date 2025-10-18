@@ -311,24 +311,6 @@ black src/ tests/
 ruff check src/ tests/
 ```
 
-### Publishing to PyPI
-
-```bash
-# Install build tools
-pip install build twine
-
-# Build distribution packages
-python -m build
-
-# Upload to PyPI (requires PyPI account and API token)
-python -m twine upload dist/*
-
-# Or upload to TestPyPI first
-python -m twine upload --repository testpypi dist/*
-```
-
-**Note:** This package is currently in alpha (v0.1.x). Stable release (v1.0.0) will be published after API stabilization.
-
 ---
 
 ## TODO
