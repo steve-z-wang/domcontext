@@ -13,7 +13,7 @@ Converts messy HTML/CDP snapshots into structured markdown for LLM context windo
 [![Tests](https://img.shields.io/badge/tests-173%20passing-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.8+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange)]()
+[![Version](https://img.shields.io/badge/version-0.1.1--alpha-orange)]()
 
 ---
 
