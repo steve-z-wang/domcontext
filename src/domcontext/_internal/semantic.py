@@ -6,7 +6,7 @@ Adds semantic IDs and preserves original node references during filtering.
 from typing import Dict, Optional, Tuple
 
 from domnode import Node, Text, filter_visible, filter_semantic
-from domnode.filters.semantic import filter_attributes, filter_empty, collapse_wrappers
+from domnode.filters.semantic import filter_attributes, filter_empty, collapse_single_child_wrappers
 
 
 def deep_copy_with_metadata(node: Node, original: Optional[Node] = None) -> Node:
@@ -89,7 +89,7 @@ def apply_filters_with_original(
             return None
 
     if collapse_wrappers_flag:
-        filtered = collapse_wrappers(filtered)
+        filtered = collapse_single_child_wrappers(filtered)
         if filtered is None:
             return None
 
