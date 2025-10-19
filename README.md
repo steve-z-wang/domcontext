@@ -10,10 +10,10 @@ Converts messy HTML/CDP snapshots into structured markdown for LLM context windo
 > - **DOM** (Document Object Model) + **context** (LLM context windows)
 > - Provides **DOM context** for your LLM agents
 
-[![Tests](https://img.shields.io/badge/tests-173%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-188%20passing-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.8+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
-[![Version](https://img.shields.io/badge/version-0.1.2--alpha-orange)]()
+[![Version](https://img.shields.io/badge/version-0.1.3--alpha-orange)]()
 
 ---
 
@@ -97,7 +97,7 @@ playwright install chromium
 - 📊 **Token counting** - Built-in token counting with tiktoken
 - 🎛️ **Configurable filtering** - Fine-tune visibility and semantic filters
 - 📦 **Multiple input formats** - Support for HTML strings and CDP snapshots
-- 🧩 **Smart chunking** - Split large DOMs into context-sized chunks with configurable overlap
+- 🧩 **Smart chunking** - Split large DOMs with continuation markers (`...`) and parent context for seamless chunk boundaries
 
 ---
 
@@ -162,10 +162,19 @@ data = context.to_dict()
 ### Chunking
 
 ```python
-# Split large DOMs into chunks
+# Split large DOMs into chunks with smart continuation markers
 for chunk in context.chunks(max_tokens=1000, overlap=100):
     print(f"Chunk tokens: {chunk.tokens}")
     print(chunk.markdown)
+
+# Chunks automatically include:
+# - Parent path context (e.g., "- body-1\n  - div-1")
+# - Continuation markers (...) when elements span chunks
+# Example: "- button-1 (type="submit" ...)" → continues in next chunk
+
+# Disable parent path if needed
+for chunk in context.chunks(max_tokens=1000, overlap=100, include_parent_path=False):
+    print(chunk.markdown)  # No parent context
 ```
 
 ### Custom Tokenizer
@@ -247,14 +256,16 @@ pytest tests/unit/ir/
 ```
 
 **Test Coverage:**
-- 173 tests passing
+- 188 tests passing
 - HTML Parser (13 tests)
 - CDP Parser (12 tests)
 - DomIR Layer (27 tests)
 - SemanticIR Layer (34 tests)
 - Visibility Filters (43 tests)
 - Semantic Filters (28 tests)
+- Chunker (15 tests)
 - Tokenizers (13 tests)
+- Smoke tests (3 tests)
 
 ---
 
@@ -315,17 +326,24 @@ ruff check src/ tests/
 
 ## TODO
 
-### Chunking Improvements
-
-1. **Handle super long text nodes** - Improve chunk behavior when a single text element exceeds the max token limit. Currently, if a single text node is larger than `max_tokens`, it will be placed in its own chunk, potentially exceeding the limit. Future improvement: split long text nodes across multiple chunks while preserving context.
-
 ### Collapsing Improvements
 
-2. **Collapse text-wrapping elements** - Improve wrapper collapsing to also collapse elements that only wrap text (not just elements that wrap other elements). Currently, `<a><span>text</span></a>` keeps the `span`, but it should be collapsed to `<a>text</a>` if the span has no attributes. Exception: Don't collapse interactive elements (button, input, a, select, textarea, etc.) even when they only wrap text, as these are semantically meaningful.
+1. **Collapse text-wrapping elements** - Improve wrapper collapsing to also collapse elements that only wrap text (not just elements that wrap other elements). Currently, `<a><span>text</span></a>` keeps the `span`, but it should be collapsed to `<a>text</a>` if the span has no attributes. Exception: Don't collapse interactive elements (button, input, a, select, textarea, etc.) even when they only wrap text, as these are semantically meaningful.
 
 ### Evaluation & Benchmarking
 
-3. **Mind2Web dataset evaluation** - Conduct comprehensive testing on the [Mind2Web dataset](https://osu-nlp-group.github.io/Mind2Web/) to evaluate DOM context quality, token reduction rates, and element selection accuracy across diverse real-world websites. Report will include performance metrics, edge cases discovered, and comparison with baseline HTML parsing.
+2. **Mind2Web dataset evaluation** - Conduct comprehensive testing on the [Mind2Web dataset](https://osu-nlp-group.github.io/Mind2Web/) to evaluate DOM context quality, token reduction rates, and element selection accuracy across diverse real-world websites. Report will include performance metrics, edge cases discovered, and comparison with baseline HTML parsing.
+
+---
+
+## Recently Completed
+
+### ✅ Chunking Improvements (v0.1.3)
+
+- **Atomic-level chunking** - Implemented word-by-word text splitting and attribute-by-attribute element splitting with continuation markers (`...`)
+- **Smart chunk boundaries** - Text and attributes now split across chunks seamlessly with proper context preservation
+- **Parent path context** - Each chunk includes parent hierarchy for better LLM understanding
+- **Better token utilization** - No more wasted chunk capacity from oversized single-line elements
 
 ---
 

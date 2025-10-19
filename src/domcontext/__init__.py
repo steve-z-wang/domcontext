@@ -5,7 +5,7 @@ from .dom_node import DomNode
 from ._internal.chunker import Chunk
 from .tokenizer import Tokenizer, TiktokenTokenizer
 
-__version__ = "0.1.0"
+__version__ = "0.1.3"
 
 __all__ = [
     'DomContext',

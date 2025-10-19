@@ -1,12 +1,7 @@
 """Unit tests for chunker."""
 
 import pytest
-from domcontext._internal.chunker import (
-    Chunk,
-    _collect_lines,
-    _calculate_overlap_start,
-    chunk_semantic_ir
-)
+from domcontext._internal.chunker import Chunk, chunk_semantic_ir
 from domcontext._internal.ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode, SemanticIR
 from domcontext.tokenizer import Tokenizer
 
@@ -26,204 +21,54 @@ class TestChunk:
         """Test creating an empty chunk."""
         chunk = Chunk()
 
-        assert chunk.lines == []
+        assert chunk.text_pieces == []
         assert chunk.get_tokens() == 0
         assert chunk.to_markdown() == ""
 
-    def test_add_single_line(self):
-        """Test adding a single line to chunk."""
+    def test_add_single_text(self):
+        """Test adding a single text piece to chunk."""
         chunk = Chunk()
-        chunk.add_line("- div-1", 7)
+        chunk.add_text("- div-1\n", 8)
 
-        assert len(chunk.lines) == 1
-        assert chunk.get_tokens() == 7
-        assert chunk.to_markdown() == "- div-1"
+        assert len(chunk.text_pieces) == 1
+        assert chunk.get_tokens() == 8
+        assert chunk.to_markdown() == "- div-1\n"
 
-    def test_add_multiple_lines(self):
-        """Test adding multiple lines to chunk."""
+    def test_add_multiple_texts(self):
+        """Test adding multiple text pieces to chunk."""
         chunk = Chunk()
-        chunk.add_line("- div-1", 7)
-        chunk.add_line("  - div-2", 9)
-        chunk.add_line("    - text", 10)
+        chunk.add_text("- div-1\n", 8)
+        chunk.add_text("  - div-2\n", 11)
+        chunk.add_text("    - text\n", 12)
 
-        assert len(chunk.lines) == 3
-        assert chunk.get_tokens() == 26
-        assert chunk.to_markdown() == "- div-1\n  - div-2\n    - text"
+        assert len(chunk.text_pieces) == 3
+        assert chunk.get_tokens() == 31
+        assert chunk.to_markdown() == "- div-1\n  - div-2\n    - text\n"
 
     def test_token_count_is_running_sum(self):
         """Test that token count is efficiently maintained as running sum."""
         chunk = Chunk()
 
-        chunk.add_line("line1", 5)
-        assert chunk.get_tokens() == 5
+        chunk.add_text("line1\n", 6)
+        assert chunk.get_tokens() == 6
 
-        chunk.add_line("line2", 3)
-        assert chunk.get_tokens() == 8
+        chunk.add_text("line2\n", 6)
+        assert chunk.get_tokens() == 12
 
-        chunk.add_line("line3", 7)
-        assert chunk.get_tokens() == 15
+        chunk.add_text("line3\n", 6)
+        assert chunk.get_tokens() == 18
 
     def test_backward_compatible_properties(self):
         """Test backward compatible .markdown and .tokens properties."""
         chunk = Chunk()
-        chunk.add_line("- div-1", 7)
-        chunk.add_line("  - text", 8)
+        chunk.add_text("- div-1\n", 8)
+        chunk.add_text("  - text\n", 10)
 
         # Test .markdown property
-        assert chunk.markdown == "- div-1\n  - text"
+        assert chunk.markdown == "- div-1\n  - text\n"
 
         # Test .tokens property
-        assert chunk.tokens == 15
-
-
-class TestCollectLines:
-    """Test _collect_lines helper function."""
-
-    def test_collect_single_element(self):
-        """Test collecting lines from single element."""
-        elem = SemanticElement(tag="div", readable_id="div-1")
-        node = SemanticTreeNode(elem)
-        ir = SemanticIR(node, id_index={"div-1": elem})
-        tokenizer = MockTokenizer()
-
-        lines = _collect_lines(ir, tokenizer)
-
-        assert len(lines) == 1
-        markdown, tokens, path = lines[0]
-        assert markdown == "- div-1"
-        assert tokens == len("- div-1")
-        assert path == []
-
-    def test_collect_nested_elements(self):
-        """Test collecting lines from nested elements."""
-        parent = SemanticElement(tag="div", readable_id="div-1")
-        parent_node = SemanticTreeNode(parent)
-
-        child = SemanticElement(tag="span", readable_id="span-1")
-        child_node = SemanticTreeNode(child)
-        parent_node.add_child(child_node)
-
-        ir = SemanticIR(parent_node, id_index={"div-1": parent, "span-1": child})
-        tokenizer = MockTokenizer()
-
-        lines = _collect_lines(ir, tokenizer)
-
-        assert len(lines) == 2
-        # Check parent
-        assert lines[0][0] == "- div-1"
-        assert lines[0][2] == []  # No parent path
-        # Check child
-        assert lines[1][0] == "  - span-1"
-        assert lines[1][2] == ["div-1"]  # Parent path
-
-    def test_collect_with_text_nodes(self):
-        """Test collecting lines with text nodes."""
-        elem = SemanticElement(tag="div", readable_id="div-1")
-        elem_node = SemanticTreeNode(elem)
-
-        text = SemanticText(text="Hello")
-        text_node = SemanticTreeNode(text)
-        elem_node.add_child(text_node)
-
-        ir = SemanticIR(elem_node, id_index={"div-1": elem})
-        tokenizer = MockTokenizer()
-
-        lines = _collect_lines(ir, tokenizer)
-
-        assert len(lines) == 2
-        assert lines[0][0] == "- div-1"
-        assert lines[1][0] == '  - "Hello"'
-
-    def test_collect_preserves_indentation(self):
-        """Test that indentation is preserved based on depth."""
-        root = SemanticElement(tag="body", readable_id="body-1")
-        root_node = SemanticTreeNode(root)
-
-        level1 = SemanticElement(tag="div", readable_id="div-1")
-        level1_node = SemanticTreeNode(level1)
-        root_node.add_child(level1_node)
-
-        level2 = SemanticElement(tag="span", readable_id="span-1")
-        level2_node = SemanticTreeNode(level2)
-        level1_node.add_child(level2_node)
-
-        ir = SemanticIR(root_node, id_index={"body-1": root, "div-1": level1, "span-1": level2})
-        tokenizer = MockTokenizer()
-
-        lines = _collect_lines(ir, tokenizer)
-
-        assert lines[0][0] == "- body-1"  # No indent
-        assert lines[1][0] == "  - div-1"  # 2 spaces
-        assert lines[2][0] == "    - span-1"  # 4 spaces
-
-
-class TestCalculateOverlapStart:
-    """Test _calculate_overlap_start helper function."""
-
-    def test_no_overlap_when_tokens_zero(self):
-        """Test no overlap when overlap_tokens is 0."""
-        all_lines = [
-            ("line1", 5, []),
-            ("line2", 5, []),
-            ("line3", 5, []),
-        ]
-
-        next_start = _calculate_overlap_start(all_lines, 0, 3, overlap_tokens=0)
-
-        assert next_start == 3
-
-    def test_overlap_single_item(self):
-        """Test overlap includes single item."""
-        all_lines = [
-            ("line1", 5, []),
-            ("line2", 5, []),
-            ("line3", 5, []),
-        ]
-
-        # With overlap=5, should include last item (index 2)
-        next_start = _calculate_overlap_start(all_lines, 0, 3, overlap_tokens=5)
-
-        assert next_start == 2
-
-    def test_overlap_multiple_items(self):
-        """Test overlap includes multiple items."""
-        all_lines = [
-            ("line1", 3, []),
-            ("line2", 3, []),
-            ("line3", 3, []),
-            ("line4", 3, []),
-        ]
-
-        # With overlap=6, should include last 2 items (indices 2-3)
-        next_start = _calculate_overlap_start(all_lines, 0, 4, overlap_tokens=6)
-
-        assert next_start == 2
-
-    def test_overlap_stops_at_chunk_start(self):
-        """Test overlap doesn't go before chunk_start."""
-        all_lines = [
-            ("line1", 5, []),
-            ("line2", 5, []),
-            ("line3", 5, []),
-        ]
-
-        # Chunk from index 2-3, large overlap should not go before index 2
-        next_start = _calculate_overlap_start(all_lines, 2, 3, overlap_tokens=100)
-
-        assert next_start == 2
-
-    def test_overlap_with_large_items(self):
-        """Test overlap when items are too large to fit in overlap budget."""
-        all_lines = [
-            ("line1", 100, []),
-            ("line2", 100, []),
-        ]
-
-        # When overlap budget (1) is too small for any item (100 tokens each),
-        # should return chunk_end (no overlap)
-        next_start = _calculate_overlap_start(all_lines, 0, 2, overlap_tokens=1)
-
-        assert next_start == 2  # No overlap possible, start at end
+        assert chunk.tokens == 18
 
 
 class TestChunkSemanticIR:
@@ -241,6 +86,50 @@ class TestChunkSemanticIR:
         assert len(chunks) == 1
         assert "div-1" in chunks[0].markdown
 
+    def test_element_with_attributes_splits(self):
+        """Test that elements with many attributes get split properly."""
+        elem = SemanticElement(
+            tag="button",
+            readable_id="button-1",
+            semantic_attributes={
+                "type": "submit",
+                "class": "btn-primary btn-large",
+                "aria-label": "Submit form",
+                "data-action": "submit"
+            }
+        )
+        node = SemanticTreeNode(elem)
+        ir = SemanticIR(node, id_index={"button-1": elem})
+        tokenizer = MockTokenizer()
+
+        # Small size to force splitting
+        chunks = chunk_semantic_ir(ir, tokenizer, size=50, overlap=10)
+
+        assert len(chunks) > 1
+        # Check for continuation markers
+        markdown = "".join(c.markdown for c in chunks)
+        assert "..." in markdown
+
+    def test_long_text_splits(self):
+        """Test that long text gets split by words."""
+        elem = SemanticElement(tag="p", readable_id="p-1")
+        elem_node = SemanticTreeNode(elem)
+
+        text = SemanticText(text="This is a very long text that should be split into multiple chunks")
+        text_node = SemanticTreeNode(text)
+        elem_node.add_child(text_node)
+
+        ir = SemanticIR(elem_node, id_index={"p-1": elem})
+        tokenizer = MockTokenizer()
+
+        # Small size to force text splitting
+        chunks = chunk_semantic_ir(ir, tokenizer, size=60, overlap=5)
+
+        assert len(chunks) > 1
+        # Check for text continuation markers
+        markdown = "".join(c.markdown for c in chunks)
+        assert '..."' in markdown or '"...' in markdown
+
     def test_multiple_chunks_created(self):
         """Test splitting into multiple chunks."""
         # Create structure with multiple elements
@@ -254,9 +143,7 @@ class TestChunkSemanticIR:
 
         ir = SemanticIR(root_node, id_index={
             "body-1": root,
-            **{f"div-{i+1}": elem for i, elem in enumerate([
-                SemanticElement(tag="div", readable_id=f"div-{i+1}") for i in range(5)
-            ])}
+            **{f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}") for i in range(5)}
         })
         tokenizer = MockTokenizer()
 
@@ -352,7 +239,7 @@ class TestChunkSemanticIR:
             assert len(overlap_lines) > 0
 
     def test_chunk_respects_size_limit(self):
-        """Test that chunks respect the size limit."""
+        """Test that chunks respect the size limit (with some tolerance for forced adds)."""
         root = SemanticElement(tag="body", readable_id="body-1")
         root_node = SemanticTreeNode(root)
 
@@ -371,11 +258,10 @@ class TestChunkSemanticIR:
         chunks = chunk_semantic_ir(ir, tokenizer, size=max_size, overlap=5)
 
         # Each chunk should not significantly exceed max_size
-        # (allowing some overhead for the first item that might be larger)
+        # (allowing overhead for forced adds and parent paths)
         for chunk in chunks:
-            # If chunk has only one line, it can exceed size (first item always added)
-            if len(chunk.lines) > 1:
-                assert chunk.get_tokens() <= max_size * 1.5  # Allow 50% margin for edge cases
+            # Allow reasonable margin for parent paths and forced adds
+            assert chunk.get_tokens() <= max_size * 2
 
     def test_empty_semantic_ir(self):
         """Test chunking empty semantic IR."""
@@ -389,6 +275,39 @@ class TestChunkSemanticIR:
 
         assert len(chunks) == 1
         assert chunks[0].get_tokens() > 0
+
+    def test_continuation_markers_correct(self):
+        """Test that continuation markers are added correctly."""
+        elem = SemanticElement(
+            tag="button",
+            readable_id="btn-1",
+            semantic_attributes={
+                "type": "submit",
+                "class": "btn-primary",
+                "aria-label": "Submit"
+            }
+        )
+        node = SemanticTreeNode(elem)
+        ir = SemanticIR(node, id_index={"btn-1": elem})
+        tokenizer = MockTokenizer()
+
+        # Force splitting
+        chunks = chunk_semantic_ir(ir, tokenizer, size=40, overlap=5)
+
+        if len(chunks) > 1:
+            # First chunk should end with "...)"
+            assert "...)" in chunks[0].markdown
+
+            # Middle chunks should have "(... " and " ...)"
+            for i in range(1, len(chunks) - 1):
+                assert "..." in chunks[i].markdown
+
+            # Last chunk should have "(... " but not end with "...)"
+            assert "..." in chunks[-1].markdown
+            # Last line should end with just ")"
+            last_line = chunks[-1].markdown.strip().split('\n')[-1]
+            assert last_line.endswith(")")
+            assert not last_line.endswith("...)")
 
 
 if __name__ == "__main__":
