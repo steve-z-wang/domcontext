@@ -2,9 +2,10 @@
 
 from typing import Any, Dict, Iterator, List, Optional
 
-from ._internal.chunker import Chunk, chunk_semantic_ir
-from ._internal.ir.dom_ir import DomIR
-from ._internal.ir.semantic_ir import SemanticIR
+from domnode import Node, parse_cdp, parse_html
+
+from ._internal.chunker import Chunk, chunk_tree
+from ._internal.semantic import apply_filters_with_original, generate_semantic_ids
 from .dom_node import DomNode
 from .tokenizer import TiktokenTokenizer, Tokenizer
 
@@ -16,16 +17,16 @@ class DomContext:
     Caches expensive operations for performance.
     """
 
-    def __init__(self, dom_ir: DomIR, semantic_ir: SemanticIR, tokenizer: Tokenizer):
+    def __init__(self, root: Node, id_mapping: Dict[str, Node], tokenizer: Tokenizer):
         """Initialize DomContext.
 
         Args:
-            dom_ir: Complete DOM tree with all CDP data
-            semantic_ir: Filtered semantic tree for LLM
+            root: Filtered semantic tree
+            id_mapping: Map from semantic_id to node
             tokenizer: Tokenizer for counting tokens
         """
-        self._dom_ir = dom_ir
-        self._semantic_ir = semantic_ir
+        self._root = root
+        self._id_mapping = id_mapping
         self._tokenizer = tokenizer
 
         # Caches
@@ -34,9 +35,9 @@ class DomContext:
         self._chunks_cache: Dict = {}  # Cache by (size, overlap)
 
     @classmethod
-    def _from_dom_ir(
+    def _from_node(
         cls,
-        dom_ir: DomIR,
+        node: Node,
         tokenizer: Optional[Tokenizer] = None,
         filter_non_visible_tags: bool = True,
         filter_css_hidden: bool = True,
@@ -45,10 +46,10 @@ class DomContext:
         filter_empty: bool = True,
         collapse_wrappers: bool = True,
     ) -> "DomContext":
-        """Create DomContext from DomIR through filtering pipeline.
+        """Create DomContext from Node through filtering pipeline.
 
         Args:
-            dom_ir: Complete DOM tree
+            node: Original DOM tree
             tokenizer: Optional tokenizer for counting tokens
             filter_non_visible_tags: Remove script, style, head tags
             filter_css_hidden: Remove display:none, visibility:hidden elements
@@ -60,34 +61,27 @@ class DomContext:
         Returns:
             DomContext with filtered semantic tree
         """
-        from ._internal.filters.semantic_pass import semantic_pass
-        from ._internal.filters.visibility_pass import visibility_pass
-
-        # Visibility filtering
-        filtered_dom_ir = visibility_pass(
-            dom_ir,
+        # Apply filters while preserving original node references
+        filtered = apply_filters_with_original(
+            node,
             filter_non_visible_tags=filter_non_visible_tags,
             filter_css_hidden=filter_css_hidden,
             filter_zero_dimensions=filter_zero_dimensions,
+            filter_attributes_flag=filter_attributes,
+            filter_empty_flag=filter_empty,
+            collapse_wrappers_flag=collapse_wrappers,
         )
-        if filtered_dom_ir is None:
-            filtered_dom_ir = dom_ir
+        if filtered is None:
+            raise ValueError("No semantic elements found after filtering")
 
-        # Semantic filtering
-        semantic_ir = semantic_pass(
-            filtered_dom_ir,
-            filter_attributes=filter_attributes,
-            filter_empty=filter_empty,
-            collapse_wrappers=collapse_wrappers,
-        )
-        if semantic_ir is None:
-            raise ValueError("No semantic elements found")
+        # Generate semantic IDs
+        filtered, id_mapping = generate_semantic_ids(filtered)
 
         # Create tokenizer
         if tokenizer is None:
             tokenizer = TiktokenTokenizer()
 
-        return cls(dom_ir=filtered_dom_ir, semantic_ir=semantic_ir, tokenizer=tokenizer)
+        return cls(root=filtered, id_mapping=id_mapping, tokenizer=tokenizer)
 
     @classmethod
     def from_html(
@@ -122,13 +116,11 @@ class DomContext:
             >>> # Skip certain filters
             >>> context = DomContext.from_html(html, filter_empty=False, collapse_wrappers=False)
         """
-        from ._internal.parsers.html_parser import parse_html as html_to_dom_ir
+        # Parse HTML using domnode
+        root = parse_html(html)
 
-        # Parse HTML to DomIR
-        dom_ir = html_to_dom_ir(html)
-
-        return cls._from_dom_ir(
-            dom_ir,
+        return cls._from_node(
+            root,
             tokenizer=tokenizer,
             filter_non_visible_tags=filter_non_visible_tags,
             filter_css_hidden=filter_css_hidden,
@@ -171,13 +163,11 @@ class DomContext:
             >>> # Skip certain filters
             >>> context = DomContext.from_cdp(cdp_data, filter_empty=False)
         """
-        from ._internal.parsers.cdp_parser import parse_cdp_snapshot as cdp_to_dom_ir
+        # Parse CDP using domnode
+        root = parse_cdp(cdp_data)
 
-        # Parse CDP to DomIR
-        dom_ir = cdp_to_dom_ir(cdp_data)
-
-        return cls._from_dom_ir(
-            dom_ir,
+        return cls._from_node(
+            root,
             tokenizer=tokenizer,
             filter_non_visible_tags=filter_non_visible_tags,
             filter_css_hidden=filter_css_hidden,
@@ -195,7 +185,9 @@ class DomContext:
             Markdown string with bullet-list format
         """
         if self._markdown_cache is None:
-            self._markdown_cache = self._semantic_ir.serialize_to_markdown()
+            from ._internal.serializer import serialize_to_markdown
+
+            self._markdown_cache = serialize_to_markdown(self._root)
         return self._markdown_cache
 
     @property
@@ -224,8 +216,8 @@ class DomContext:
         """
         cache_key = (max_tokens, overlap, include_parent_path)
         if cache_key not in self._chunks_cache:
-            self._chunks_cache[cache_key] = chunk_semantic_ir(
-                self._semantic_ir,
+            self._chunks_cache[cache_key] = chunk_tree(
+                self._root,
                 self._tokenizer,
                 size=max_tokens,
                 overlap=overlap,
@@ -245,14 +237,11 @@ class DomContext:
         Raises:
             KeyError: If element ID not found
         """
-        semantic_element = self._semantic_ir.get_element_by_id(element_id)
-        if semantic_element is None:
+        node = self._id_mapping.get(element_id)
+        if node is None:
             raise KeyError(f"Element '{element_id}' not found")
 
-        if semantic_element.dom_tree_node is None:
-            raise ValueError(f"Element '{element_id}' has no DOM tree reference")
-
-        return DomNode(semantic_element.dom_tree_node)
+        return DomNode(node)
 
     def elements(self, tag: Optional[str] = None) -> List[DomNode]:
         """Get all elements, optionally filtered by tag.
@@ -264,13 +253,9 @@ class DomContext:
             List of DomNode objects
         """
         result = []
-        all_elements = self._semantic_ir.get_all_elements_with_ids()
-
-        for element in all_elements.values():
-            if tag is None or element.tag == tag:
-                if element.dom_tree_node is not None:
-                    result.append(DomNode(element.dom_tree_node))
-
+        for element_id, node in self._id_mapping.items():
+            if tag is None or node.tag == tag:
+                result.append(DomNode(node))
         return result
 
     def __iter__(self) -> Iterator[DomNode]:
@@ -279,15 +264,17 @@ class DomContext:
         Yields:
             DomNode objects in DFS order
         """
-        from ._internal.ir.semantic_ir import SemanticElement
 
-        for node in self._semantic_ir.dfs():
-            # Only yield element nodes, not text nodes
-            if isinstance(node.data, SemanticElement) and node.data.dom_tree_node is not None:
-                yield DomNode(node.data.dom_tree_node)
+        def dfs(node: Node):
+            yield DomNode(node)
+            for child in node.children:
+                if isinstance(child, Node):
+                    yield from dfs(child)
+
+        yield from dfs(self._root)
 
     def __repr__(self) -> str:
-        return f"DomContext(elements={len(self._semantic_ir.all_element_nodes())}, tokens={self.tokens})"
+        return f"DomContext(elements={len(self._id_mapping)}, tokens={self.tokens})"
 
     def __str__(self) -> str:
         return self.markdown
