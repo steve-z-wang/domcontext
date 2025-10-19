@@ -18,19 +18,20 @@ Five-pass pipeline:
 """
 
 from typing import Optional
+
 from ..ir.dom_ir import DomIR
 from ..ir.semantic_ir import SemanticIR
+from .semantic.collapse_wrappers import collapse_wrappers_pass
 from .semantic.convert import convert_to_semantic_pass
 from .semantic.filter_attributes import filter_by_attributes_pass
 from .semantic.filter_empty import filter_empty_nodes_pass
-from .semantic.collapse_wrappers import collapse_wrappers_pass
 
 
 def semantic_pass(
     dom_ir: DomIR,
     filter_attributes: bool = True,
     filter_empty: bool = True,
-    collapse_wrappers: bool = True
+    collapse_wrappers: bool = True,
 ) -> Optional[SemanticIR]:
     """
     Create SemanticIR from DomIR through five passes.
@@ -67,6 +68,7 @@ def semantic_pass(
 
     # Pass 4: Generate readable IDs for LLM and build ID mapping in single traversal (always needed)
     from .semantic.generate_ids import generate_ids_pass
+
     root, id_mapping = generate_ids_pass(root)
 
     # Create SemanticIR with pre-built ID index (fully formed!)

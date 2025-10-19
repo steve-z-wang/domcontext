@@ -1,7 +1,8 @@
 """Smoke test to verify setup is working."""
 
 import pytest
-from domcontext import DomContext, DomNode, Tokenizer, TiktokenTokenizer, Chunk
+
+from domcontext import Chunk, DomContext, DomNode, TiktokenTokenizer, Tokenizer
 
 
 def test_imports():

@@ -1,12 +1,11 @@
 """Pass 3: Filter empty nodes - remove nodes with no attributes and no children."""
 
 from typing import Optional, Set
-from ...ir.semantic_ir import SemanticTreeNode, SemanticElement, SemanticText
+
+from ...ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode
 
 # Interactive tags that should be kept even without attributes
-INTERACTIVE_TAGS: Set[str] = {
-    'a', 'button', 'input', 'select', 'textarea', 'label'
-}
+INTERACTIVE_TAGS: Set[str] = {"a", "button", "input", "select", "textarea", "label"}
 
 
 def filter_empty_nodes_pass(semantic_tree_node: SemanticTreeNode) -> Optional[SemanticTreeNode]:
@@ -56,7 +55,7 @@ def filter_empty_nodes_pass(semantic_tree_node: SemanticTreeNode) -> Optional[Se
     new_semantic_element = SemanticElement(
         tag=semantic_element.tag,
         semantic_attributes=semantic_element.semantic_attributes.copy(),
-        dom_tree_node=semantic_element.dom_tree_node  # Preserve reference
+        dom_tree_node=semantic_element.dom_tree_node,  # Preserve reference
     )
 
     new_semantic_tree_node = SemanticTreeNode(data=new_semantic_element)

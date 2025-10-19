@@ -1,8 +1,14 @@
 """Unit tests for chunker."""
 
 import pytest
+
 from domcontext._internal.chunker import Chunk, chunk_semantic_ir
-from domcontext._internal.ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode, SemanticIR
+from domcontext._internal.ir.semantic_ir import (
+    SemanticElement,
+    SemanticIR,
+    SemanticText,
+    SemanticTreeNode,
+)
 from domcontext.tokenizer import Tokenizer
 
 
@@ -95,8 +101,8 @@ class TestChunkSemanticIR:
                 "type": "submit",
                 "class": "btn-primary btn-large",
                 "aria-label": "Submit form",
-                "data-action": "submit"
-            }
+                "data-action": "submit",
+            },
         )
         node = SemanticTreeNode(elem)
         ir = SemanticIR(node, id_index={"button-1": elem})
@@ -115,7 +121,9 @@ class TestChunkSemanticIR:
         elem = SemanticElement(tag="p", readable_id="p-1")
         elem_node = SemanticTreeNode(elem)
 
-        text = SemanticText(text="This is a very long text that should be split into multiple chunks")
+        text = SemanticText(
+            text="This is a very long text that should be split into multiple chunks"
+        )
         text_node = SemanticTreeNode(text)
         elem_node.add_child(text_node)
 
@@ -141,10 +149,16 @@ class TestChunkSemanticIR:
             child_node = SemanticTreeNode(elem)
             root_node.add_child(child_node)
 
-        ir = SemanticIR(root_node, id_index={
-            "body-1": root,
-            **{f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}") for i in range(5)}
-        })
+        ir = SemanticIR(
+            root_node,
+            id_index={
+                "body-1": root,
+                **{
+                    f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}")
+                    for i in range(5)
+                },
+            },
+        )
         tokenizer = MockTokenizer()
 
         # Small chunk size to force splitting
@@ -167,11 +181,17 @@ class TestChunkSemanticIR:
             child_node = SemanticTreeNode(child)
             div_node.add_child(child_node)
 
-        ir = SemanticIR(root_node, id_index={
-            "body-1": root,
-            "div-1": div,
-            **{f"span-{i+1}": SemanticElement(tag="span", readable_id=f"span-{i+1}") for i in range(3)}
-        })
+        ir = SemanticIR(
+            root_node,
+            id_index={
+                "body-1": root,
+                "div-1": div,
+                **{
+                    f"span-{i+1}": SemanticElement(tag="span", readable_id=f"span-{i+1}")
+                    for i in range(3)
+                },
+            },
+        )
         tokenizer = MockTokenizer()
 
         chunks = chunk_semantic_ir(ir, tokenizer, size=30, overlap=5, include_parent_path=True)
@@ -191,10 +211,16 @@ class TestChunkSemanticIR:
             child_node = SemanticTreeNode(elem)
             root_node.add_child(child_node)
 
-        ir = SemanticIR(root_node, id_index={
-            "body-1": root,
-            **{f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}") for i in range(3)}
-        })
+        ir = SemanticIR(
+            root_node,
+            id_index={
+                "body-1": root,
+                **{
+                    f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}")
+                    for i in range(3)
+                },
+            },
+        )
         tokenizer = MockTokenizer()
 
         chunks = chunk_semantic_ir(ir, tokenizer, size=20, overlap=5, include_parent_path=False)
@@ -220,10 +246,10 @@ class TestChunkSemanticIR:
             child_node = SemanticTreeNode(elem)
             root_node.add_child(child_node)
 
-        ir = SemanticIR(root_node, id_index={
-            "body-1": root,
-            **{f"div-{i+1}": div for i, div in enumerate(divs)}
-        })
+        ir = SemanticIR(
+            root_node,
+            id_index={"body-1": root, **{f"div-{i+1}": div for i, div in enumerate(divs)}},
+        )
         tokenizer = MockTokenizer()
 
         chunks = chunk_semantic_ir(ir, tokenizer, size=25, overlap=10)
@@ -231,8 +257,8 @@ class TestChunkSemanticIR:
         # With overlap, adjacent chunks should share some content
         if len(chunks) >= 2:
             # Check that some content appears in both chunks
-            chunk1_lines = set(chunks[0].markdown.split('\n'))
-            chunk2_lines = set(chunks[1].markdown.split('\n'))
+            chunk1_lines = set(chunks[0].markdown.split("\n"))
+            chunk2_lines = set(chunks[1].markdown.split("\n"))
             overlap_lines = chunk1_lines & chunk2_lines
 
             # Should have some overlap (besides just parent paths)
@@ -248,10 +274,16 @@ class TestChunkSemanticIR:
             child_node = SemanticTreeNode(elem)
             root_node.add_child(child_node)
 
-        ir = SemanticIR(root_node, id_index={
-            "body-1": root,
-            **{f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}") for i in range(10)}
-        })
+        ir = SemanticIR(
+            root_node,
+            id_index={
+                "body-1": root,
+                **{
+                    f"div-{i+1}": SemanticElement(tag="div", readable_id=f"div-{i+1}")
+                    for i in range(10)
+                },
+            },
+        )
         tokenizer = MockTokenizer()
 
         max_size = 50
@@ -281,11 +313,7 @@ class TestChunkSemanticIR:
         elem = SemanticElement(
             tag="button",
             readable_id="btn-1",
-            semantic_attributes={
-                "type": "submit",
-                "class": "btn-primary",
-                "aria-label": "Submit"
-            }
+            semantic_attributes={"type": "submit", "class": "btn-primary", "aria-label": "Submit"},
         )
         node = SemanticTreeNode(elem)
         ir = SemanticIR(node, id_index={"btn-1": elem})
@@ -305,7 +333,7 @@ class TestChunkSemanticIR:
             # Last chunk should have "(... " but not end with "...)"
             assert "..." in chunks[-1].markdown
             # Last line should end with just ")"
-            last_line = chunks[-1].markdown.strip().split('\n')[-1]
+            last_line = chunks[-1].markdown.strip().split("\n")[-1]
             assert last_line.endswith(")")
             assert not last_line.endswith("...)")
 

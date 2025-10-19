@@ -1,7 +1,8 @@
 """Pass 4: Collapse wrappers - collapse single-child wrappers with no attributes."""
 
 from typing import Optional
-from ...ir.semantic_ir import SemanticTreeNode, SemanticElement, SemanticText
+
+from ...ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode
 
 
 def collapse_wrappers_pass(semantic_tree_node: SemanticTreeNode) -> Optional[SemanticTreeNode]:
@@ -51,7 +52,7 @@ def collapse_wrappers_pass(semantic_tree_node: SemanticTreeNode) -> Optional[Sem
     new_semantic_element = SemanticElement(
         tag=semantic_element.tag,
         semantic_attributes=semantic_element.semantic_attributes.copy(),
-        dom_tree_node=semantic_element.dom_tree_node  # Preserve reference
+        dom_tree_node=semantic_element.dom_tree_node,  # Preserve reference
     )
 
     new_semantic_tree_node = SemanticTreeNode(data=new_semantic_element)

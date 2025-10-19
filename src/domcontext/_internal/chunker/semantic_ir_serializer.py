@@ -1,9 +1,10 @@
 """SemanticIRSerializer - orchestrates serialization of entire IR."""
 
 from typing import Iterator
-from ..ir.semantic_ir import SemanticIR, SemanticElement, SemanticText
+
+from ..ir.semantic_ir import SemanticElement, SemanticIR, SemanticText
+from .atomic_serializers import ElementNoAttrsSerializer, ElementSerializer, TextSerializer
 from .types import Atom
-from .atomic_serializers import ElementSerializer, TextSerializer, ElementNoAttrsSerializer
 
 
 class SemanticIRSerializer:
@@ -42,8 +43,15 @@ class SemanticIRSerializer:
             serializer = self._create_serializer(node, indent, node_id, path)
 
             # Yield atoms from this serializer
-            for (content, line_start_first, line_start_cont,
-                 line_end_complete, line_end_cont, is_first, is_last) in serializer:
+            for (
+                content,
+                line_start_first,
+                line_start_cont,
+                line_end_complete,
+                line_end_cont,
+                is_first,
+                is_last,
+            ) in serializer:
 
                 yield Atom(
                     content=content,
@@ -54,7 +62,7 @@ class SemanticIRSerializer:
                     line_end_cont=line_end_cont,
                     node_id=node_id,
                     is_first_in_node=is_first,
-                    is_last_in_node=is_last
+                    is_last_in_node=is_last,
                 )
 
     def _create_serializer(self, node, indent: str, node_id: int, path: list):

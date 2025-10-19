@@ -10,6 +10,7 @@ class Chunk:
 
     No line-level operations - just stores text pieces.
     """
+
     text_pieces: List[str] = field(default_factory=list)
     _total_tokens: int = field(default=0, init=False, repr=False)
 

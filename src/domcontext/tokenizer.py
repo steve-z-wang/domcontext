@@ -32,6 +32,7 @@ class TiktokenTokenizer(Tokenizer):
             encoding: Tiktoken encoding name (default: cl100k_base for GPT-4/3.5)
         """
         import tiktoken
+
         self._enc = tiktoken.get_encoding(encoding)
 
     def count_tokens(self, text: str) -> int:

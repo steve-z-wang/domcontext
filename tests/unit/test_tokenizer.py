@@ -1,7 +1,8 @@
 """Unit tests for tokenizers."""
 
 import pytest
-from domcontext.tokenizer import Tokenizer, TiktokenTokenizer
+
+from domcontext.tokenizer import TiktokenTokenizer, Tokenizer
 
 
 class MockTokenizer(Tokenizer):
@@ -37,7 +38,7 @@ class TestTiktokenTokenizer:
         tokenizer = TiktokenTokenizer()
 
         assert tokenizer is not None
-        assert hasattr(tokenizer, '_enc')
+        assert hasattr(tokenizer, "_enc")
 
     def test_creates_with_custom_encoding(self):
         """Test creating tokenizer with custom encoding."""

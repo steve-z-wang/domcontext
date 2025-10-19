@@ -1,8 +1,9 @@
 """Main chunking algorithm - builds chunks from flat atom list."""
 
 from typing import List, Optional, Tuple
-from ..ir.semantic_ir import SemanticIR
+
 from ...tokenizer import Tokenizer
+from ..ir.semantic_ir import SemanticIR
 from .chunk import Chunk
 from .semantic_ir_serializer import SemanticIRSerializer
 from .types import Atom
@@ -14,7 +15,7 @@ def chunk_semantic_ir(
     size: int = 500,
     overlap: int = 50,
     include_parent_path: bool = True,
-    max_unit_tokens: int = None  # Kept for backward compat, not used
+    max_unit_tokens: int = None,  # Kept for backward compat, not used
 ) -> List[Chunk]:
     """Split semantic IR into chunks with overlap.
 
@@ -94,7 +95,9 @@ def chunk_semantic_ir(
 
                 # Try to add atom to current scope
                 test_atoms = current_scope_atoms + [atom]
-                is_cont = _is_continuation(prev_chunk_last_node_id, current_scope_node_id, test_atoms)
+                is_cont = _is_continuation(
+                    prev_chunk_last_node_id, current_scope_node_id, test_atoms
+                )
                 test_line, test_tokens = _build_and_count(
                     test_atoms, is_cont, not atom.is_last_in_node, tokenizer
                 )
@@ -114,7 +117,9 @@ def chunk_semantic_ir(
 
             # Check if scope is complete
             if current_scope_atoms and current_scope_atoms[-1].is_last_in_node:
-                is_cont = _is_continuation(prev_chunk_last_node_id, current_scope_node_id, current_scope_atoms)
+                is_cont = _is_continuation(
+                    prev_chunk_last_node_id, current_scope_node_id, current_scope_atoms
+                )
                 line, tokens = _build_and_count(current_scope_atoms, is_cont, False, tokenizer)
                 chunk.add_text(line, tokens)
                 atoms_in_chunk.extend(current_scope_atoms)
@@ -122,7 +127,9 @@ def chunk_semantic_ir(
 
         # Handle incomplete scope at end of chunk
         if current_scope_atoms:
-            is_cont = _is_continuation(prev_chunk_last_node_id, current_scope_node_id, current_scope_atoms)
+            is_cont = _is_continuation(
+                prev_chunk_last_node_id, current_scope_node_id, current_scope_atoms
+            )
             line, tokens = _build_and_count(current_scope_atoms, is_cont, True, tokenizer)
 
             # Force add if chunk is empty, otherwise check if fits
@@ -166,23 +173,14 @@ def chunk_semantic_ir(
 
 
 def _is_continuation(
-    prev_chunk_last_node_id: Optional[int],
-    current_node_id: int,
-    atoms: List[Atom]
+    prev_chunk_last_node_id: Optional[int], current_node_id: int, atoms: List[Atom]
 ) -> bool:
     """Check if we're continuing a node from the previous chunk."""
-    return (
-        prev_chunk_last_node_id == current_node_id
-        and atoms
-        and not atoms[0].is_first_in_node
-    )
+    return prev_chunk_last_node_id == current_node_id and atoms and not atoms[0].is_first_in_node
 
 
 def _build_and_count(
-    atoms: List[Atom],
-    is_continuation: bool,
-    has_more: bool,
-    tokenizer: Tokenizer
+    atoms: List[Atom], is_continuation: bool, has_more: bool, tokenizer: Tokenizer
 ) -> Tuple[str, int]:
     """Build a scope line and count its tokens.
 
@@ -194,11 +192,7 @@ def _build_and_count(
     return line, tokens
 
 
-def _build_scope_line(
-    atoms: List[Atom],
-    is_continuation: bool,
-    has_more: bool
-) -> str:
+def _build_scope_line(atoms: List[Atom], is_continuation: bool, has_more: bool) -> str:
     """Build a line from a list of atoms in the same scope.
 
     Args:
@@ -243,7 +237,7 @@ def _calculate_overlap_start(
     chunk_start: int,
     chunk_end: int,
     overlap_tokens: int,
-    tokenizer: Tokenizer
+    tokenizer: Tokenizer,
 ) -> int:
     """Calculate where next chunk should start based on overlap.
 

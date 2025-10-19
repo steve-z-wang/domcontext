@@ -3,8 +3,9 @@
 Parses CDP DOMSnapshot.captureSnapshot responses into DomIR.
 """
 
-from typing import Dict, List, Optional, Any
-from ..ir.dom_ir import DomElement, DomText, DomTreeNode, BoundingBox, DomIR
+from typing import Any, Dict, List, Optional
+
+from ..ir.dom_ir import BoundingBox, DomElement, DomIR, DomText, DomTreeNode
 
 
 def parse_cdp_snapshot(snapshot_data: Dict[str, Any]) -> DomIR:
@@ -19,8 +20,8 @@ def parse_cdp_snapshot(snapshot_data: Dict[str, Any]) -> DomIR:
     Returns:
         DomIR: Complete DOM tree with all CDP data
     """
-    documents_data = snapshot_data.get('documents', [])
-    strings = snapshot_data.get('strings', [])
+    documents_data = snapshot_data.get("documents", [])
+    strings = snapshot_data.get("strings", [])
 
     if not documents_data:
         # Empty document
@@ -30,8 +31,8 @@ def parse_cdp_snapshot(snapshot_data: Dict[str, Any]) -> DomIR:
 
     # Parse first document
     document_data = documents_data[0]
-    nodes_data = document_data.get('nodes', {})
-    layout_data = document_data.get('layout', {})
+    nodes_data = document_data.get("nodes", {})
+    layout_data = document_data.get("layout", {})
 
     # Helper to resolve string indices
     def get_string(index):
@@ -40,16 +41,16 @@ def parse_cdp_snapshot(snapshot_data: Dict[str, Any]) -> DomIR:
         return ""
 
     # Extract parallel arrays
-    node_types = nodes_data.get('nodeType', [])
-    node_names = nodes_data.get('nodeName', [])
-    node_values = nodes_data.get('nodeValue', [])
-    parent_indices = nodes_data.get('parentIndex', [])
-    attributes_arrays = nodes_data.get('attributes', [])
+    node_types = nodes_data.get("nodeType", [])
+    node_names = nodes_data.get("nodeName", [])
+    node_values = nodes_data.get("nodeValue", [])
+    parent_indices = nodes_data.get("parentIndex", [])
+    attributes_arrays = nodes_data.get("attributes", [])
 
     # Layout data (optional)
-    layout_node_indices = layout_data.get('nodeIndex', [])
-    layout_bounds = layout_data.get('bounds', [])
-    layout_styles = layout_data.get('styles', [])
+    layout_node_indices = layout_data.get("nodeIndex", [])
+    layout_bounds = layout_data.get("bounds", [])
+    layout_styles = layout_data.get("styles", [])
 
     # Build layout lookup: node_index -> (bounds, styles)
     layout_map = {}
@@ -99,11 +100,7 @@ def parse_cdp_snapshot(snapshot_data: Dict[str, Any]) -> DomIR:
 
             # Create DomElement (data only)
             element = DomElement(
-                tag=tag_name,
-                cdp_index=i,
-                attributes=node_attrs,
-                styles=styles,
-                bounds=bounds
+                tag=tag_name, cdp_index=i, attributes=node_attrs, styles=styles, bounds=bounds
             )
 
             # Create DomTreeNode wrapping the element

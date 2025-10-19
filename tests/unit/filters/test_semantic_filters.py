@@ -1,19 +1,20 @@
 """Unit tests for semantic filter passes."""
 
 import pytest
-from domcontext._internal.ir.dom_ir import DomElement, DomText, DomTreeNode
-from domcontext._internal.ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode
+
+from domcontext._internal.filters.semantic.collapse_wrappers import collapse_wrappers_pass
 from domcontext._internal.filters.semantic.convert import convert_to_semantic_pass
 from domcontext._internal.filters.semantic.filter_attributes import (
+    SEMANTIC_ATTRIBUTES,
     filter_by_attributes_pass,
-    SEMANTIC_ATTRIBUTES
 )
 from domcontext._internal.filters.semantic.filter_empty import (
+    INTERACTIVE_TAGS,
     filter_empty_nodes_pass,
-    INTERACTIVE_TAGS
 )
-from domcontext._internal.filters.semantic.collapse_wrappers import collapse_wrappers_pass
 from domcontext._internal.filters.semantic.generate_ids import generate_ids_pass
+from domcontext._internal.ir.dom_ir import DomElement, DomText, DomTreeNode
+from domcontext._internal.ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode
 
 
 class TestConvertToSemantic:
@@ -66,8 +67,7 @@ class TestConvertToSemantic:
     def test_preserves_all_attributes(self):
         """Test that all attributes are preserved (filtering happens later)."""
         dom_elem = DomElement(
-            tag="input",
-            attributes={"type": "text", "class": "form-control", "data-test": "foo"}
+            tag="input", attributes={"type": "text", "class": "form-control", "data-test": "foo"}
         )
         dom_node = DomTreeNode(data=dom_elem)
 
@@ -85,8 +85,7 @@ class TestFilterByAttributes:
     def test_keeps_semantic_attributes(self):
         """Test that semantic attributes are kept."""
         semantic_elem = SemanticElement(
-            tag="button",
-            semantic_attributes={"type": "submit", "name": "btn"}
+            tag="button", semantic_attributes={"type": "submit", "name": "btn"}
         )
         semantic_node = SemanticTreeNode(data=semantic_elem)
 
@@ -99,8 +98,7 @@ class TestFilterByAttributes:
     def test_removes_non_semantic_attributes(self):
         """Test that non-semantic attributes are removed."""
         semantic_elem = SemanticElement(
-            tag="div",
-            semantic_attributes={"class": "test", "id": "foo", "role": "navigation"}
+            tag="div", semantic_attributes={"class": "test", "id": "foo", "role": "navigation"}
         )
         semantic_node = SemanticTreeNode(data=semantic_elem)
 
@@ -114,10 +112,7 @@ class TestFilterByAttributes:
         """Test that all defined semantic attributes are kept."""
         # Test each semantic attribute type
         for attr_name in SEMANTIC_ATTRIBUTES:
-            semantic_elem = SemanticElement(
-                tag="div",
-                semantic_attributes={attr_name: "value"}
-            )
+            semantic_elem = SemanticElement(tag="div", semantic_attributes={attr_name: "value"})
             semantic_node = SemanticTreeNode(data=semantic_elem)
 
             result = filter_by_attributes_pass(semantic_node)
@@ -146,14 +141,16 @@ class TestFilterByAttributes:
 
     def test_filters_children_recursively(self):
         """Test that children are filtered recursively."""
-        parent = SemanticTreeNode(data=SemanticElement(
-            tag="div",
-            semantic_attributes={"class": "container"}  # Will be removed
-        ))
-        child_keep = SemanticTreeNode(data=SemanticElement(
-            tag="button",
-            semantic_attributes={"type": "submit"}  # Will be kept
-        ))
+        parent = SemanticTreeNode(
+            data=SemanticElement(
+                tag="div", semantic_attributes={"class": "container"}  # Will be removed
+            )
+        )
+        child_keep = SemanticTreeNode(
+            data=SemanticElement(
+                tag="button", semantic_attributes={"type": "submit"}  # Will be kept
+            )
+        )
         child_remove = SemanticTreeNode(data=SemanticText(text="  "))  # Will be removed
 
         parent.add_child(child_keep)
@@ -171,10 +168,7 @@ class TestFilterEmpty:
 
     def test_keeps_node_with_attributes(self):
         """Test that nodes with attributes are kept."""
-        semantic_elem = SemanticElement(
-            tag="div",
-            semantic_attributes={"role": "navigation"}
-        )
+        semantic_elem = SemanticElement(tag="div", semantic_attributes={"role": "navigation"})
         semantic_node = SemanticTreeNode(data=semantic_elem)
 
         result = filter_empty_nodes_pass(semantic_node)
@@ -254,7 +248,9 @@ class TestCollapseWrappers:
         """Test that wrapper with single element child is collapsed."""
         # div (no attrs) > p (with text)
         parent = SemanticTreeNode(data=SemanticElement(tag="div"))
-        child = SemanticTreeNode(data=SemanticElement(tag="p", semantic_attributes={"role": "note"}))
+        child = SemanticTreeNode(
+            data=SemanticElement(tag="p", semantic_attributes={"role": "note"})
+        )
 
         parent.add_child(child)
 
@@ -266,10 +262,9 @@ class TestCollapseWrappers:
 
     def test_keeps_wrapper_with_attributes(self):
         """Test that wrappers with attributes are not collapsed."""
-        parent = SemanticTreeNode(data=SemanticElement(
-            tag="div",
-            semantic_attributes={"role": "navigation"}
-        ))
+        parent = SemanticTreeNode(
+            data=SemanticElement(tag="div", semantic_attributes={"role": "navigation"})
+        )
         child = SemanticTreeNode(data=SemanticElement(tag="p"))
 
         parent.add_child(child)
@@ -325,10 +320,9 @@ class TestCollapseWrappers:
         # div (no attrs) > div (no attrs) > p (with attrs)
         grandparent = SemanticTreeNode(data=SemanticElement(tag="div"))
         parent = SemanticTreeNode(data=SemanticElement(tag="div"))
-        child = SemanticTreeNode(data=SemanticElement(
-            tag="p",
-            semantic_attributes={"role": "note"}
-        ))
+        child = SemanticTreeNode(
+            data=SemanticElement(tag="p", semantic_attributes={"role": "note"})
+        )
 
         grandparent.add_child(parent)
         parent.add_child(child)

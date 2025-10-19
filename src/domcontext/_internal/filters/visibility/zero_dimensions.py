@@ -1,7 +1,8 @@
 """Pass 3: Remove zero-dimension elements without visible children."""
 
 from typing import Optional
-from ...ir.dom_ir import DomTreeNode, DomElement, DomText
+
+from ...ir.dom_ir import DomText, DomTreeNode
 
 
 def filter_zero_dimensions_pass(tree_node: DomTreeNode) -> Optional[DomTreeNode]:

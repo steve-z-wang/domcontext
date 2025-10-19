@@ -10,9 +10,10 @@ if they have visible children (e.g., absolutely positioned popup dialogs).
 """
 
 from typing import Optional
+
 from ..ir.dom_ir import DomIR
-from .visibility.non_visible_tags import filter_non_visible_tags_pass
 from .visibility.css_hidden import filter_css_hidden_pass
+from .visibility.non_visible_tags import filter_non_visible_tags_pass
 from .visibility.zero_dimensions import filter_zero_dimensions_pass
 
 
@@ -20,7 +21,7 @@ def visibility_pass(
     dom_ir: DomIR,
     filter_non_visible_tags: bool = True,
     filter_css_hidden: bool = True,
-    filter_zero_dimensions: bool = True
+    filter_zero_dimensions: bool = True,
 ) -> Optional[DomIR]:
     """
     Apply multiple visibility filtering passes.

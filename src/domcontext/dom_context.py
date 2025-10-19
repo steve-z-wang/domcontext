@@ -1,11 +1,12 @@
 """DomContext - Public API for parsed DOM pages."""
 
-from typing import List, Optional, Iterator, Dict, Any, Tuple
+from typing import Any, Dict, Iterator, List, Optional
+
+from ._internal.chunker import Chunk, chunk_semantic_ir
 from ._internal.ir.dom_ir import DomIR
 from ._internal.ir.semantic_ir import SemanticIR
 from .dom_node import DomNode
-from ._internal.chunker import chunk_semantic_ir, Chunk
-from .tokenizer import Tokenizer, TiktokenTokenizer
+from .tokenizer import TiktokenTokenizer, Tokenizer
 
 
 class DomContext:
@@ -15,12 +16,7 @@ class DomContext:
     Caches expensive operations for performance.
     """
 
-    def __init__(
-        self,
-        dom_ir: DomIR,
-        semantic_ir: SemanticIR,
-        tokenizer: Tokenizer
-    ):
+    def __init__(self, dom_ir: DomIR, semantic_ir: SemanticIR, tokenizer: Tokenizer):
         """Initialize DomContext.
 
         Args:
@@ -47,8 +43,8 @@ class DomContext:
         filter_zero_dimensions: bool = True,
         filter_attributes: bool = True,
         filter_empty: bool = True,
-        collapse_wrappers: bool = True
-    ) -> 'DomContext':
+        collapse_wrappers: bool = True,
+    ) -> "DomContext":
         """Create DomContext from DomIR through filtering pipeline.
 
         Args:
@@ -64,15 +60,15 @@ class DomContext:
         Returns:
             DomContext with filtered semantic tree
         """
-        from ._internal.filters.visibility_pass import visibility_pass
         from ._internal.filters.semantic_pass import semantic_pass
+        from ._internal.filters.visibility_pass import visibility_pass
 
         # Visibility filtering
         filtered_dom_ir = visibility_pass(
             dom_ir,
             filter_non_visible_tags=filter_non_visible_tags,
             filter_css_hidden=filter_css_hidden,
-            filter_zero_dimensions=filter_zero_dimensions
+            filter_zero_dimensions=filter_zero_dimensions,
         )
         if filtered_dom_ir is None:
             filtered_dom_ir = dom_ir
@@ -82,7 +78,7 @@ class DomContext:
             filtered_dom_ir,
             filter_attributes=filter_attributes,
             filter_empty=filter_empty,
-            collapse_wrappers=collapse_wrappers
+            collapse_wrappers=collapse_wrappers,
         )
         if semantic_ir is None:
             raise ValueError("No semantic elements found")
@@ -91,11 +87,7 @@ class DomContext:
         if tokenizer is None:
             tokenizer = TiktokenTokenizer()
 
-        return cls(
-            dom_ir=filtered_dom_ir,
-            semantic_ir=semantic_ir,
-            tokenizer=tokenizer
-        )
+        return cls(dom_ir=filtered_dom_ir, semantic_ir=semantic_ir, tokenizer=tokenizer)
 
     @classmethod
     def from_html(
@@ -107,8 +99,8 @@ class DomContext:
         filter_zero_dimensions: bool = True,
         filter_attributes: bool = True,
         filter_empty: bool = True,
-        collapse_wrappers: bool = True
-    ) -> 'DomContext':
+        collapse_wrappers: bool = True,
+    ) -> "DomContext":
         """Parse HTML string into DomContext.
 
         Args:
@@ -143,7 +135,7 @@ class DomContext:
             filter_zero_dimensions=filter_zero_dimensions,
             filter_attributes=filter_attributes,
             filter_empty=filter_empty,
-            collapse_wrappers=collapse_wrappers
+            collapse_wrappers=collapse_wrappers,
         )
 
     @classmethod
@@ -156,8 +148,8 @@ class DomContext:
         filter_zero_dimensions: bool = True,
         filter_attributes: bool = True,
         filter_empty: bool = True,
-        collapse_wrappers: bool = True
-    ) -> 'DomContext':
+        collapse_wrappers: bool = True,
+    ) -> "DomContext":
         """Parse CDP data into DomContext.
 
         Args:
@@ -192,7 +184,7 @@ class DomContext:
             filter_zero_dimensions=filter_zero_dimensions,
             filter_attributes=filter_attributes,
             filter_empty=filter_empty,
-            collapse_wrappers=collapse_wrappers
+            collapse_wrappers=collapse_wrappers,
         )
 
     @property
@@ -217,7 +209,9 @@ class DomContext:
             self._token_cache = self._tokenizer.count_tokens(self.markdown)
         return self._token_cache
 
-    def chunks(self, max_tokens: int = 500, overlap: int = 50, include_parent_path: bool = True) -> List[Chunk]:
+    def chunks(
+        self, max_tokens: int = 500, overlap: int = 50, include_parent_path: bool = True
+    ) -> List[Chunk]:
         """Split into chunks with specified max tokens and overlap (cached).
 
         Args:
@@ -235,7 +229,7 @@ class DomContext:
                 self._tokenizer,
                 size=max_tokens,
                 overlap=overlap,
-                include_parent_path=include_parent_path
+                include_parent_path=include_parent_path,
             )
         return self._chunks_cache[cache_key]
 
@@ -293,7 +287,7 @@ class DomContext:
                 yield DomNode(node.data.dom_tree_node)
 
     def __repr__(self) -> str:
-        return f'DomContext(elements={len(self._semantic_ir.all_element_nodes())}, tokens={self.tokens})'
+        return f"DomContext(elements={len(self._semantic_ir.all_element_nodes())}, tokens={self.tokens})"
 
     def __str__(self) -> str:
         return self.markdown

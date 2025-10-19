@@ -6,10 +6,13 @@ Also builds ID→Element mapping in a single traversal for efficiency.
 """
 
 from typing import Dict, Tuple
-from ...ir.semantic_ir import SemanticIR, SemanticTreeNode, SemanticElement
+
+from ...ir.semantic_ir import SemanticElement, SemanticTreeNode
 
 
-def generate_ids_pass(root: SemanticTreeNode) -> Tuple[SemanticTreeNode, Dict[str, SemanticElement]]:
+def generate_ids_pass(
+    root: SemanticTreeNode,
+) -> Tuple[SemanticTreeNode, Dict[str, SemanticElement]]:
     """
     Generate readable IDs for all SemanticElements and build ID mapping.
 

@@ -1,13 +1,8 @@
 """Unit tests for DomIR."""
 
 import pytest
-from domcontext._internal.ir.dom_ir import (
-    BoundingBox,
-    DomElement,
-    DomText,
-    DomTreeNode,
-    DomIR
-)
+
+from domcontext._internal.ir.dom_ir import BoundingBox, DomElement, DomIR, DomText, DomTreeNode
 
 
 class TestBoundingBox:
@@ -44,7 +39,7 @@ class TestDomElement:
             cdp_index=42,
             attributes={"type": "submit", "name": "btn"},
             styles={"display": "block", "color": "red"},
-            bounds=bbox
+            bounds=bbox,
         )
 
         assert elem.tag == "button"
@@ -323,13 +318,13 @@ class TestDomIR:
         dom_ir = DomIR(root=root)
         result = dom_ir.to_dict()
 
-        assert result['total_nodes'] == 1
-        assert result['root']['type'] == 'element'
-        assert result['root']['tag'] == 'div'
-        assert result['root']['attributes'] == {"class": "test"}
-        assert result['root']['styles'] == {}
-        assert result['root']['bounds'] is None
-        assert result['root']['children'] == []
+        assert result["total_nodes"] == 1
+        assert result["root"]["type"] == "element"
+        assert result["root"]["tag"] == "div"
+        assert result["root"]["attributes"] == {"class": "test"}
+        assert result["root"]["styles"] == {}
+        assert result["root"]["bounds"] is None
+        assert result["root"]["children"] == []
 
     def test_to_dict_with_children(self):
         """Test serializing tree with children to dict."""
@@ -343,12 +338,12 @@ class TestDomIR:
         dom_ir = DomIR(root=root)
         result = dom_ir.to_dict()
 
-        assert result['total_nodes'] == 2  # div and p (not text)
-        assert len(result['root']['children']) == 2
-        assert result['root']['children'][0]['type'] == 'text'
-        assert result['root']['children'][0]['text'] == 'Hello'
-        assert result['root']['children'][1]['type'] == 'element'
-        assert result['root']['children'][1]['tag'] == 'p'
+        assert result["total_nodes"] == 2  # div and p (not text)
+        assert len(result["root"]["children"]) == 2
+        assert result["root"]["children"][0]["type"] == "text"
+        assert result["root"]["children"][0]["text"] == "Hello"
+        assert result["root"]["children"][1]["type"] == "element"
+        assert result["root"]["children"][1]["tag"] == "p"
 
     def test_to_dict_with_bounds(self):
         """Test serializing tree with bounds to dict."""
@@ -359,11 +354,11 @@ class TestDomIR:
         dom_ir = DomIR(root=root)
         result = dom_ir.to_dict()
 
-        assert result['root']['bounds'] is not None
-        assert result['root']['bounds']['x'] == 10
-        assert result['root']['bounds']['y'] == 20
-        assert result['root']['bounds']['width'] == 100
-        assert result['root']['bounds']['height'] == 50
+        assert result["root"]["bounds"] is not None
+        assert result["root"]["bounds"]["x"] == 10
+        assert result["root"]["bounds"]["y"] == 20
+        assert result["root"]["bounds"]["width"] == 100
+        assert result["root"]["bounds"]["height"] == 50
 
     def test_dom_ir_repr(self):
         """Test DomIR string representation."""

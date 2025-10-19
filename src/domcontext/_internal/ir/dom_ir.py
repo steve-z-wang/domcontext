@@ -7,13 +7,14 @@ Contains:
 - DomIR: Complete DOM tree
 """
 
-from typing import Optional, List, Dict, Union
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Union
 
 
 @dataclass
 class BoundingBox:
     """Bounding box coordinates from CDP layout data."""
+
     x: float
     y: float
     width: float
@@ -33,7 +34,7 @@ class DomElement:
         cdp_index: Optional[int] = None,
         attributes: Optional[Dict[str, str]] = None,
         styles: Optional[Dict[str, str]] = None,
-        bounds: Optional[BoundingBox] = None
+        bounds: Optional[BoundingBox] = None,
     ):
         self.tag = tag
         self.cdp_index = cdp_index
@@ -70,19 +71,19 @@ class DomTreeNode:
 
     def __init__(self, data: Union[DomElement, DomText]):
         self.data = data
-        self.parent: Optional['DomTreeNode'] = None
-        self.children: List['DomTreeNode'] = []
+        self.parent: Optional["DomTreeNode"] = None
+        self.children: List["DomTreeNode"] = []
 
-    def add_child(self, child: 'DomTreeNode') -> None:
+    def add_child(self, child: "DomTreeNode") -> None:
         """Add a child node and set its parent."""
         self.children.append(child)
         child.parent = self
 
-    def get_element_children(self) -> List['DomTreeNode']:
+    def get_element_children(self) -> List["DomTreeNode"]:
         """Get only element children (not text)."""
         return [c for c in self.children if isinstance(c.data, DomElement)]
 
-    def get_text_children(self) -> List['DomTreeNode']:
+    def get_text_children(self) -> List["DomTreeNode"]:
         """Get only text children."""
         return [c for c in self.children if isinstance(c.data, DomText)]
 
@@ -96,7 +97,7 @@ class DomTreeNode:
                 text_parts.append(child.get_all_text())
         return " ".join(text_parts).strip()
 
-    def walk_up(self) -> List['DomTreeNode']:
+    def walk_up(self) -> List["DomTreeNode"]:
         """Walk up to root, returning path (bottom to top)."""
         path = []
         current = self
@@ -107,7 +108,7 @@ class DomTreeNode:
 
     def __repr__(self) -> str:
         data_type = type(self.data).__name__
-        return f'DomTreeNode(data={data_type}, children={len(self.children)})'
+        return f"DomTreeNode(data={data_type}, children={len(self.children)})"
 
 
 class DomIR:
@@ -152,33 +153,32 @@ class DomIR:
         Returns:
             Dictionary with root and total_nodes
         """
+
         def node_to_dict(node: DomTreeNode) -> dict:
             if isinstance(node.data, DomElement):
                 elem = node.data
                 result = {
-                    'type': 'element',
-                    'tag': elem.tag,
-                    'attributes': elem.attributes,
-                    'styles': elem.styles,
-                    'bounds': {
-                        'x': elem.bounds.x,
-                        'y': elem.bounds.y,
-                        'width': elem.bounds.width,
-                        'height': elem.bounds.height
-                    } if elem.bounds else None,
-                    'children': [node_to_dict(child) for child in node.children]
+                    "type": "element",
+                    "tag": elem.tag,
+                    "attributes": elem.attributes,
+                    "styles": elem.styles,
+                    "bounds": (
+                        {
+                            "x": elem.bounds.x,
+                            "y": elem.bounds.y,
+                            "width": elem.bounds.width,
+                            "height": elem.bounds.height,
+                        }
+                        if elem.bounds
+                        else None
+                    ),
+                    "children": [node_to_dict(child) for child in node.children],
                 }
             else:  # DomText
-                result = {
-                    'type': 'text',
-                    'text': node.data.text
-                }
+                result = {"type": "text", "text": node.data.text}
             return result
 
-        return {
-            'root': node_to_dict(self.root),
-            'total_nodes': len(self.all_element_nodes())
-        }
+        return {"root": node_to_dict(self.root), "total_nodes": len(self.all_element_nodes())}
 
     def __repr__(self) -> str:
         total = len(self.all_element_nodes())

@@ -7,7 +7,7 @@ Contains:
 - SemanticIR: Semantic tree for resolution
 """
 
-from typing import Optional, List, Dict, Union
+from typing import Dict, List, Optional, Union
 
 
 class SemanticElement:
@@ -22,8 +22,8 @@ class SemanticElement:
         self,
         tag: str,
         semantic_attributes: Optional[Dict[str, str]] = None,
-        dom_tree_node: Optional['DomTreeNode'] = None,  # type: ignore
-        readable_id: Optional[str] = None
+        dom_tree_node: Optional["DomTreeNode"] = None,  # type: ignore
+        readable_id: Optional[str] = None,
     ):
         self.tag = tag
         self.semantic_attributes = semantic_attributes or {}
@@ -64,11 +64,7 @@ class SemanticText:
     References back to DomTreeNode.
     """
 
-    def __init__(
-        self,
-        text: str,
-        dom_tree_node: Optional['DomTreeNode'] = None  # type: ignore
-    ):
+    def __init__(self, text: str, dom_tree_node: Optional["DomTreeNode"] = None):  # type: ignore
         self.text = text
         self.dom_tree_node = dom_tree_node
 
@@ -99,17 +95,17 @@ class SemanticTreeNode:
 
     def __init__(self, data: Union[SemanticElement, SemanticText]):
         self.data = data
-        self.children: List['SemanticTreeNode'] = []
+        self.children: List["SemanticTreeNode"] = []
 
-    def add_child(self, child: 'SemanticTreeNode') -> None:
+    def add_child(self, child: "SemanticTreeNode") -> None:
         """Add a child node."""
         self.children.append(child)
 
-    def get_element_children(self) -> List['SemanticTreeNode']:
+    def get_element_children(self) -> List["SemanticTreeNode"]:
         """Get only element children (not text)."""
         return [c for c in self.children if isinstance(c.data, SemanticElement)]
 
-    def get_text_children(self) -> List['SemanticTreeNode']:
+    def get_text_children(self) -> List["SemanticTreeNode"]:
         """Get only text children."""
         return [c for c in self.children if isinstance(c.data, SemanticText)]
 
@@ -125,7 +121,7 @@ class SemanticTreeNode:
 
     def __repr__(self) -> str:
         data_type = type(self.data).__name__
-        return f'SemanticTreeNode(data={data_type}, children={len(self.children)})'
+        return f"SemanticTreeNode(data={data_type}, children={len(self.children)})"
 
 
 class SemanticIR:
@@ -136,7 +132,9 @@ class SemanticIR:
     Lightweight - no parent references.
     """
 
-    def __init__(self, root: SemanticTreeNode, id_index: Optional[Dict[str, SemanticElement]] = None):
+    def __init__(
+        self, root: SemanticTreeNode, id_index: Optional[Dict[str, SemanticElement]] = None
+    ):
         """
         Initialize SemanticIR.
 
@@ -226,6 +224,7 @@ class SemanticIR:
             >>> for node, depth, path in semantic_ir.dfs(with_path=True):
             ...     print(f"Path: {path}, Depth: {depth}")
         """
+
         def traverse(node: SemanticTreeNode, depth: int = 0, path: List[str] = None):
             if path is None:
                 path = []
@@ -282,27 +281,22 @@ class SemanticIR:
         Returns:
             Dictionary with root and total_nodes
         """
+
         def node_to_dict(node: SemanticTreeNode) -> dict:
             if isinstance(node.data, SemanticElement):
                 elem = node.data
                 result = {
-                    'type': 'element',
-                    'tag': elem.tag,
-                    'readable_id': elem.readable_id,
-                    'attributes': elem.semantic_attributes,
-                    'children': [node_to_dict(child) for child in node.children]
+                    "type": "element",
+                    "tag": elem.tag,
+                    "readable_id": elem.readable_id,
+                    "attributes": elem.semantic_attributes,
+                    "children": [node_to_dict(child) for child in node.children],
                 }
             else:  # SemanticText
-                result = {
-                    'type': 'text',
-                    'text': node.data.text
-                }
+                result = {"type": "text", "text": node.data.text}
             return result
 
-        return {
-            'root': node_to_dict(self.root),
-            'total_nodes': len(self.all_element_nodes())
-        }
+        return {"root": node_to_dict(self.root), "total_nodes": len(self.all_element_nodes())}
 
     def __repr__(self) -> str:
         total = len(self.all_element_nodes())

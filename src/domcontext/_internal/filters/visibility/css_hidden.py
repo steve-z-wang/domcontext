@@ -1,7 +1,8 @@
 """Pass 2: Remove CSS-hidden elements (display:none, visibility:hidden, opacity:0)."""
 
 from typing import Optional
-from ...ir.dom_ir import DomTreeNode, DomElement, DomText
+
+from ...ir.dom_ir import DomText, DomTreeNode
 from .utils import parse_inline_style
 
 
@@ -23,22 +24,22 @@ def filter_css_hidden_pass(tree_node: DomTreeNode) -> Optional[DomTreeNode]:
     element = tree_node.data
 
     # Check CSS styles
-    display = element.styles.get('display', '').lower()
-    visibility = element.styles.get('visibility', '').lower()
-    opacity = element.styles.get('opacity', '1')
+    display = element.styles.get("display", "").lower()
+    visibility = element.styles.get("visibility", "").lower()
+    opacity = element.styles.get("opacity", "1")
 
     # Check inline style attribute (takes precedence)
-    inline_style = element.attributes.get('style', '')
+    inline_style = element.attributes.get("style", "")
     if inline_style:
         inline_styles = parse_inline_style(inline_style)
-        display = inline_styles.get('display', display)
-        visibility = inline_styles.get('visibility', visibility)
-        opacity = inline_styles.get('opacity', opacity)
+        display = inline_styles.get("display", display)
+        visibility = inline_styles.get("visibility", visibility)
+        opacity = inline_styles.get("opacity", opacity)
 
     # Filter CSS-hidden elements
-    if display == 'none':
+    if display == "none":
         return None
-    if visibility == 'hidden':
+    if visibility == "hidden":
         return None
     try:
         if float(opacity) == 0:
@@ -47,11 +48,11 @@ def filter_css_hidden_pass(tree_node: DomTreeNode) -> Optional[DomTreeNode]:
         pass
 
     # Check hidden attribute
-    if 'hidden' in element.attributes:
+    if "hidden" in element.attributes:
         return None
 
     # Check for hidden input
-    if element.tag == 'input' and element.attributes.get('type', '').lower() == 'hidden':
+    if element.tag == "input" and element.attributes.get("type", "").lower() == "hidden":
         return None
 
     # Keep this node, process children

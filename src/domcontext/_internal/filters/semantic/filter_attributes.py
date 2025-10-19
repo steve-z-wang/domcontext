@@ -1,17 +1,28 @@
 """Pass 2: Filter by attributes - remove non-semantic attributes and nodes."""
 
 from typing import Optional, Set
-from ...ir.semantic_ir import SemanticTreeNode, SemanticElement, SemanticText
+
+from ...ir.semantic_ir import SemanticElement, SemanticText, SemanticTreeNode
 
 # Semantic attributes to preserve
 SEMANTIC_ATTRIBUTES: Set[str] = {
-    'role', 'aria-label', 'aria-labelledby', 'aria-describedby',
-    'aria-checked', 'aria-selected', 'aria-expanded',
-    'type', 'name', 'placeholder', 'value', 'alt', 'title'
+    "role",
+    "aria-label",
+    "aria-labelledby",
+    "aria-describedby",
+    "aria-checked",
+    "aria-selected",
+    "aria-expanded",
+    "type",
+    "name",
+    "placeholder",
+    "value",
+    "alt",
+    "title",
 }
 
 # Non-semantic roles to filter out
-NON_SEMANTIC_ROLES: Set[str] = {'none', 'presentation'}
+NON_SEMANTIC_ROLES: Set[str] = {"none", "presentation"}
 
 
 def filter_by_attributes_pass(semantic_tree_node: SemanticTreeNode) -> Optional[SemanticTreeNode]:
@@ -51,7 +62,7 @@ def filter_by_attributes_pass(semantic_tree_node: SemanticTreeNode) -> Optional[
     new_semantic_element = SemanticElement(
         tag=semantic_element.tag,
         semantic_attributes=filtered_attrs,
-        dom_tree_node=semantic_element.dom_tree_node  # Preserve reference
+        dom_tree_node=semantic_element.dom_tree_node,  # Preserve reference
     )
 
     # Create new SemanticTreeNode

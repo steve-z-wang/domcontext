@@ -4,13 +4,13 @@ from typing import Set
 
 # Tags that are not visible/rendered (not part of visible DOM)
 NON_VISIBLE_TAGS: Set[str] = {
-    'script',    # JavaScript code
-    'style',     # CSS styles
-    'head',      # Document metadata container
-    'meta',      # Metadata
-    'link',      # External resources
-    'title',     # Document title (in head)
-    'noscript',  # No-script content
+    "script",  # JavaScript code
+    "style",  # CSS styles
+    "head",  # Document metadata container
+    "meta",  # Metadata
+    "link",  # External resources
+    "title",  # Document title (in head)
+    "noscript",  # No-script content
 }
 
 
@@ -29,10 +29,10 @@ def parse_inline_style(style_attr: str) -> dict:
         return styles
 
     # Split by semicolon
-    for declaration in style_attr.split(';'):
+    for declaration in style_attr.split(";"):
         declaration = declaration.strip()
-        if ':' in declaration:
-            prop, value = declaration.split(':', 1)
+        if ":" in declaration:
+            prop, value = declaration.split(":", 1)
             styles[prop.strip().lower()] = value.strip().lower()
 
     return styles

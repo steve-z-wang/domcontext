@@ -1,6 +1,7 @@
 """DomNode - Public API for DOM elements."""
 
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
+
 from ._internal.ir.dom_ir import DomElement, DomTreeNode
 
 
@@ -42,7 +43,7 @@ class DomNode:
         return self._node.data.cdp_index
 
     @property
-    def parent(self) -> Optional['DomNode']:
+    def parent(self) -> Optional["DomNode"]:
         """Parent element in DOM tree."""
         if self._node.parent is None:
             return None
@@ -57,7 +58,7 @@ class DomNode:
         return None
 
     @property
-    def children(self) -> List['DomNode']:
+    def children(self) -> List["DomNode"]:
         """Child elements (not text nodes) in DOM tree.
 
         Returns only element children, not text nodes.
@@ -72,4 +73,4 @@ class DomNode:
         attrs = ", ".join(f'{k}="{v}"' for k, v in list(self.attributes.items())[:3])
         if len(self.attributes) > 3:
             attrs += ", ..."
-        return f'<{self.tag} {attrs}>'
+        return f"<{self.tag} {attrs}>"

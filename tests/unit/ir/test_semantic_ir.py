@@ -1,11 +1,12 @@
 """Unit tests for SemanticIR."""
 
 import pytest
+
 from domcontext._internal.ir.semantic_ir import (
     SemanticElement,
+    SemanticIR,
     SemanticText,
     SemanticTreeNode,
-    SemanticIR
 )
 
 
@@ -26,7 +27,7 @@ class TestSemanticElement:
         elem = SemanticElement(
             tag="button",
             semantic_attributes={"type": "submit", "name": "btn"},
-            readable_id="button-1"
+            readable_id="button-1",
         )
 
         assert elem.tag == "button"
@@ -51,8 +52,7 @@ class TestSemanticElement:
     def test_to_markdown_with_attributes(self):
         """Test markdown serialization with attributes."""
         elem = SemanticElement(
-            tag="input",
-            semantic_attributes={"type": "text", "name": "username"}
+            tag="input", semantic_attributes={"type": "text", "name": "username"}
         )
 
         markdown = elem.to_markdown()
@@ -62,9 +62,7 @@ class TestSemanticElement:
     def test_to_markdown_with_id_and_attributes(self):
         """Test markdown serialization with both ID and attributes."""
         elem = SemanticElement(
-            tag="button",
-            readable_id="button-1",
-            semantic_attributes={"type": "submit"}
+            tag="button", readable_id="button-1", semantic_attributes={"type": "submit"}
         )
 
         markdown = elem.to_markdown()
@@ -74,9 +72,7 @@ class TestSemanticElement:
     def test_element_repr(self):
         """Test element string representation."""
         elem = SemanticElement(
-            tag="input",
-            semantic_attributes={"type": "text"},
-            readable_id="input-1"
+            tag="input", semantic_attributes={"type": "text"}, readable_id="input-1"
         )
 
         repr_str = repr(elem)
@@ -152,7 +148,7 @@ class TestSemanticTreeNode:
         assert parent.children[0] is child1
         assert parent.children[1] is child2
         # No parent reference in SemanticTreeNode
-        assert not hasattr(child1, 'parent')
+        assert not hasattr(child1, "parent")
 
     def test_get_element_children(self):
         """Test getting only element children."""
@@ -393,7 +389,9 @@ class TestSemanticIR:
     def test_serialize_to_markdown_simple(self):
         """Test markdown serialization."""
         elem1 = SemanticElement(tag="body", readable_id="body-1")
-        elem2 = SemanticElement(tag="button", readable_id="button-1", semantic_attributes={"type": "submit"})
+        elem2 = SemanticElement(
+            tag="button", readable_id="button-1", semantic_attributes={"type": "submit"}
+        )
         text = SemanticText(text="Click")
 
         root = SemanticTreeNode(data=elem1)
@@ -413,18 +411,20 @@ class TestSemanticIR:
 
     def test_to_dict_simple(self):
         """Test serializing simple tree to dict."""
-        elem = SemanticElement(tag="div", readable_id="div-1", semantic_attributes={"class": "test"})
+        elem = SemanticElement(
+            tag="div", readable_id="div-1", semantic_attributes={"class": "test"}
+        )
         root = SemanticTreeNode(data=elem)
 
         semantic_ir = SemanticIR(root=root)
         result = semantic_ir.to_dict()
 
-        assert result['total_nodes'] == 1
-        assert result['root']['type'] == 'element'
-        assert result['root']['tag'] == 'div'
-        assert result['root']['readable_id'] == 'div-1'
-        assert result['root']['attributes'] == {"class": "test"}
-        assert result['root']['children'] == []
+        assert result["total_nodes"] == 1
+        assert result["root"]["type"] == "element"
+        assert result["root"]["tag"] == "div"
+        assert result["root"]["readable_id"] == "div-1"
+        assert result["root"]["attributes"] == {"class": "test"}
+        assert result["root"]["children"] == []
 
     def test_to_dict_with_children(self):
         """Test serializing tree with children to dict."""
@@ -438,12 +438,12 @@ class TestSemanticIR:
         semantic_ir = SemanticIR(root=root)
         result = semantic_ir.to_dict()
 
-        assert result['total_nodes'] == 2  # div and p (not text)
-        assert len(result['root']['children']) == 2
-        assert result['root']['children'][0]['type'] == 'text'
-        assert result['root']['children'][0]['text'] == 'Hello'
-        assert result['root']['children'][1]['type'] == 'element'
-        assert result['root']['children'][1]['tag'] == 'p'
+        assert result["total_nodes"] == 2  # div and p (not text)
+        assert len(result["root"]["children"]) == 2
+        assert result["root"]["children"][0]["type"] == "text"
+        assert result["root"]["children"][0]["text"] == "Hello"
+        assert result["root"]["children"][1]["type"] == "element"
+        assert result["root"]["children"][1]["tag"] == "p"
 
     def test_semantic_ir_repr(self):
         """Test SemanticIR string representation."""

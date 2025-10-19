@@ -1,11 +1,12 @@
 """Unit tests for visibility filter passes."""
 
 import pytest
-from domcontext._internal.ir.dom_ir import DomElement, DomText, DomTreeNode, BoundingBox
-from domcontext._internal.filters.visibility.non_visible_tags import filter_non_visible_tags_pass
+
 from domcontext._internal.filters.visibility.css_hidden import filter_css_hidden_pass
+from domcontext._internal.filters.visibility.non_visible_tags import filter_non_visible_tags_pass
+from domcontext._internal.filters.visibility.utils import NON_VISIBLE_TAGS, parse_inline_style
 from domcontext._internal.filters.visibility.zero_dimensions import filter_zero_dimensions_pass
-from domcontext._internal.filters.visibility.utils import parse_inline_style, NON_VISIBLE_TAGS
+from domcontext._internal.ir.dom_ir import BoundingBox, DomElement, DomText, DomTreeNode
 
 
 class TestNonVisibleTagsFilter:
@@ -292,11 +293,11 @@ class TestCSSHiddenFilter:
     def test_inline_style_overrides_computed(self):
         """Test that inline styles override computed styles."""
         # Computed style says block, inline says none
-        div = DomTreeNode(data=DomElement(
-            tag="div",
-            styles={"display": "block"},
-            attributes={"style": "display: none"}
-        ))
+        div = DomTreeNode(
+            data=DomElement(
+                tag="div", styles={"display": "block"}, attributes={"style": "display: none"}
+            )
+        )
 
         result = filter_css_hidden_pass(div)
 
@@ -312,10 +313,7 @@ class TestCSSHiddenFilter:
 
     def test_removes_hidden_input(self):
         """Test that hidden input elements are removed."""
-        input_elem = DomTreeNode(data=DomElement(
-            tag="input",
-            attributes={"type": "hidden"}
-        ))
+        input_elem = DomTreeNode(data=DomElement(tag="input", attributes={"type": "hidden"}))
 
         result = filter_css_hidden_pass(input_elem)
 
@@ -323,10 +321,7 @@ class TestCSSHiddenFilter:
 
     def test_keeps_text_input(self):
         """Test that text input elements are kept."""
-        input_elem = DomTreeNode(data=DomElement(
-            tag="input",
-            attributes={"type": "text"}
-        ))
+        input_elem = DomTreeNode(data=DomElement(tag="input", attributes={"type": "text"}))
 
         result = filter_css_hidden_pass(input_elem)
 

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Iterator
+
 from ..ir.semantic_ir import SemanticElement, SemanticText
 
 
@@ -53,13 +54,13 @@ class ElementNoAttrsSerializer(AtomicSerializer):
         line_start = f"{self.indent}- {self.base_id}"
 
         yield (
-            "",            # content (empty - just element ID in line_start)
-            line_start,    # line_start_first
-            line_start,    # line_start_cont (same, no continuation markers)
-            "",            # line_end_complete
-            "",            # line_end_cont
-            True,          # is_first
-            True           # is_last
+            "",  # content (empty - just element ID in line_start)
+            line_start,  # line_start_first
+            line_start,  # line_start_cont (same, no continuation markers)
+            "",  # line_end_complete
+            "",  # line_end_cont
+            True,  # is_first
+            True,  # is_last
         )
 
 
@@ -76,8 +77,8 @@ class ElementSerializer(AtomicSerializer):
         attrs = list(self.element.semantic_attributes.items())
 
         for i, (key, value) in enumerate(attrs):
-            is_first = (i == 0)
-            is_last = (i == len(attrs) - 1)
+            is_first = i == 0
+            is_last = i == len(attrs) - 1
 
             content = f'{key}="{value}"'
 
@@ -96,7 +97,7 @@ class ElementSerializer(AtomicSerializer):
                 line_end_complete,
                 line_end_cont,
                 is_first,
-                is_last
+                is_last,
             )
 
 
@@ -117,19 +118,19 @@ class TextSerializer(AtomicSerializer):
             line_start_cont = f'{self.indent}- "... '
 
             yield (
-                "",                 # content
-                line_start_first,   # line_start_first
-                line_start_cont,    # line_start_cont
-                '"',                # line_end_complete
-                ' ..."',            # line_end_cont
-                True,               # is_first
-                True                # is_last
+                "",  # content
+                line_start_first,  # line_start_first
+                line_start_cont,  # line_start_cont
+                '"',  # line_end_complete
+                ' ..."',  # line_end_cont
+                True,  # is_first
+                True,  # is_last
             )
             return
 
         for i, word in enumerate(words):
-            is_first = (i == 0)
-            is_last = (i == len(words) - 1)
+            is_first = i == 0
+            is_last = i == len(words) - 1
 
             # Build formatted line starts with indent and quote marker
             line_start_first = f'{self.indent}- "'
@@ -146,5 +147,5 @@ class TextSerializer(AtomicSerializer):
                 line_end_complete,
                 line_end_cont,
                 is_first,
-                is_last
+                is_last,
             )

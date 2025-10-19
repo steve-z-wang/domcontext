@@ -1,8 +1,9 @@
 """Unit tests for HTML parser."""
 
 import pytest
+
+from domcontext._internal.ir.dom_ir import DomElement, DomIR, DomText
 from domcontext._internal.parsers.html_parser import parse_html
-from domcontext._internal.ir.dom_ir import DomElement, DomText, DomIR
 
 
 class TestHTMLParser:

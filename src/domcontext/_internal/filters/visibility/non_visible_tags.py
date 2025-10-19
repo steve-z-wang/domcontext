@@ -1,7 +1,8 @@
 """Pass 1: Remove non-visible tags (script, style, head, etc.)."""
 
 from typing import Optional
-from ...ir.dom_ir import DomTreeNode, DomElement, DomText
+
+from ...ir.dom_ir import DomText, DomTreeNode
 from .utils import NON_VISIBLE_TAGS
 
 

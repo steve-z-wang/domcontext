@@ -3,9 +3,12 @@
 Parses HTML strings (with embedded backend_node_id) into DomIR.
 """
 
-from typing import Dict, Optional
-from lxml import etree, html as lxml_html
-from ..ir.dom_ir import DomElement, DomText, DomTreeNode, BoundingBox, DomIR
+from typing import Optional
+
+from lxml import etree
+from lxml import html as lxml_html
+
+from ..ir.dom_ir import BoundingBox, DomElement, DomIR, DomText, DomTreeNode
 
 
 def parse_html(html_string: str) -> DomIR:
@@ -38,7 +41,7 @@ def parse_html(html_string: str) -> DomIR:
     try:
         # Try parsing as XML first (preserves custom tags like <text>)
         parser = etree.XMLParser(recover=True, remove_blank_text=False)
-        tree = etree.fromstring(html_string.encode('utf-8'), parser=parser)
+        tree = etree.fromstring(html_string.encode("utf-8"), parser=parser)
     except:
         # Fallback to HTML parser
         tree = lxml_html.fromstring(html_string)
@@ -62,15 +65,10 @@ def _parse_bounding_box(bbox_str: str) -> Optional[BoundingBox]:
         return None
 
     try:
-        parts = bbox_str.split(',')
+        parts = bbox_str.split(",")
         if len(parts) >= 4:
             x, y, width, height = parts[:4]
-            return BoundingBox(
-                x=float(x),
-                y=float(y),
-                width=float(width),
-                height=float(height)
-            )
+            return BoundingBox(x=float(x), y=float(y), width=float(width), height=float(height))
     except (ValueError, AttributeError):
         pass
 
@@ -102,7 +100,7 @@ def _convert_lxml_to_dom_tree(lxml_node, node_index: int = 0) -> DomTreeNode:
     tag_name = tag_name.lower()
 
     # Handle special Mind2Web <text> elements (they use custom tags)
-    if tag_name == 'text':
+    if tag_name == "text":
         # This is a text content wrapper, extract the text
         text_content = (lxml_node.text or "").strip()
         if text_content:
@@ -114,11 +112,11 @@ def _convert_lxml_to_dom_tree(lxml_node, node_index: int = 0) -> DomTreeNode:
     attributes = dict(lxml_node.attrib)
 
     # Parse backend_node_id if present
-    backend_node_id = attributes.get('backend_node_id')
+    backend_node_id = attributes.get("backend_node_id")
     cdp_index = int(backend_node_id) if backend_node_id else None
 
     # Parse bounding box if present
-    bbox_str = attributes.get('bounding_box_rect', '')
+    bbox_str = attributes.get("bounding_box_rect", "")
     bounds = _parse_bounding_box(bbox_str)
 
     # Create DomElement
@@ -127,7 +125,7 @@ def _convert_lxml_to_dom_tree(lxml_node, node_index: int = 0) -> DomTreeNode:
         cdp_index=cdp_index,
         attributes=attributes,
         styles={},  # Mind2Web doesn't provide computed styles
-        bounds=bounds
+        bounds=bounds,
     )
 
     # Create TreeNode

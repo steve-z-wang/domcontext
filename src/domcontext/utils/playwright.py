@@ -4,7 +4,7 @@ This module requires the optional 'playwright' dependency.
 Install with: pip install domcontext[playwright]
 """
 
-from typing import Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -12,12 +12,13 @@ if TYPE_CHECKING:
 # Check if playwright is installed
 try:
     import playwright
+
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
 
 
-async def capture_snapshot(page: 'Page') -> Dict[str, Any]:
+async def capture_snapshot(page: "Page") -> Dict[str, Any]:
     """
     Capture CDP DOMSnapshot from a Playwright page.
 
@@ -61,24 +62,30 @@ async def capture_snapshot(page: 'Page') -> Dict[str, Any]:
     """
     if not PLAYWRIGHT_AVAILABLE:
         raise ImportError(
-            "Playwright is not installed. "
-            "Install it with: pip install domcontext[playwright]"
+            "Playwright is not installed. " "Install it with: pip install domcontext[playwright]"
         )
 
     # Get CDP session from the page
     cdp = await page.context.new_cdp_session(page)
 
     # Capture snapshot with full layout and style information
-    snapshot = await cdp.send('DOMSnapshot.captureSnapshot', {
-        'computedStyles': ['display', 'visibility', 'opacity'],  # Styles for visibility filtering
-        'includePaintOrder': True,    # Include rendering order
-        'includeDOMRects': True        # Include bounding boxes
-    })
+    snapshot = await cdp.send(
+        "DOMSnapshot.captureSnapshot",
+        {
+            "computedStyles": [
+                "display",
+                "visibility",
+                "opacity",
+            ],  # Styles for visibility filtering
+            "includePaintOrder": True,  # Include rendering order
+            "includeDOMRects": True,  # Include bounding boxes
+        },
+    )
 
     return snapshot
 
 
-async def capture_snapshot_with_html(page: 'Page') -> tuple[Dict[str, Any], str]:
+async def capture_snapshot_with_html(page: "Page") -> tuple[Dict[str, Any], str]:
     """
     Capture both CDP snapshot and raw HTML from a Playwright page.
 
@@ -104,8 +111,7 @@ async def capture_snapshot_with_html(page: 'Page') -> tuple[Dict[str, Any], str]
     """
     if not PLAYWRIGHT_AVAILABLE:
         raise ImportError(
-            "Playwright is not installed. "
-            "Install it with: pip install domcontext[playwright]"
+            "Playwright is not installed. " "Install it with: pip install domcontext[playwright]"
         )
 
     # Capture both simultaneously

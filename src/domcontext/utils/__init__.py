@@ -2,4 +2,4 @@
 
 from .playwright import capture_snapshot
 
-__all__ = ['capture_snapshot']
+__all__ = ["capture_snapshot"]
