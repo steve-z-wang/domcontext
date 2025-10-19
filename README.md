@@ -1,19 +1,13 @@
 # domcontext
 
-**Parse DOM trees into clean, LLM-friendly context.**
+Parse DOM trees into clean, LLM-friendly context.
 
-Converts messy HTML/CDP snapshots into structured markdown for LLM context windows. Designed for web automation agents that need to provide clean DOM context to LLMs.
+Converts messy HTML/CDP snapshots into structured markdown for LLM context windows. Built on [domnode](https://github.com/steve-z-wang/domnode) for DOM parsing and filtering.
 
-> **⚠️ Development Status:** This package is in active development (v0.1.x). APIs may change between minor versions. Not recommended for production use yet.
-
-> **Why "domcontext"?** It's a double pun! 🎯
-> - **DOM** (Document Object Model) + **context** (LLM context windows)
-> - Provides **DOM context** for your LLM agents
-
-[![Tests](https://img.shields.io/badge/tests-188%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-16%20passing-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.8+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
-[![Version](https://img.shields.io/badge/version-0.1.3--alpha-orange)]()
+[![Version](https://img.shields.io/badge/version-0.2.0-orange)]()
 
 ---
 
@@ -22,7 +16,6 @@ Converts messy HTML/CDP snapshots into structured markdown for LLM context windo
 ```python
 from domcontext import DomContext
 
-# Parse HTML string
 html = """
 <html>
 <head><title>Example</title></head>
@@ -42,9 +35,9 @@ context = DomContext.from_html(html)
 print(context.markdown)
 print(f"Tokens: {context.tokens}")
 
-# Iterate through interactive elements
-for element in context.elements():
-    print(f"{element.id}: {element.tag} - {element.text}")
+# Access elements by ID
+button = context.get_element('button-1')
+print(f"Button: {button.tag} - {button.text}")
 ```
 
 **Output:**
@@ -58,6 +51,7 @@ for element in context.elements():
       - "Search"
 
 Tokens: 42
+Button: button - Search
 ```
 
 ---
@@ -65,24 +59,20 @@ Tokens: 42
 ## Installation
 
 ```bash
-# Install from source
-pip install -e .
-
-# Install with dev dependencies
-pip install -e ".[dev]"
-
-# Install with Playwright support (for live browser CDP capture)
-pip install -e ".[playwright]"
-
-# Install with Jupyter notebooks support (to run examples)
-pip install -e ".[examples,playwright]"
-
-# Install with all optional dependencies
-pip install -e ".[dev,playwright,examples]"
+pip install domcontext
 ```
 
-After installing with Playwright support, install browser binaries:
+Or from source:
+
 ```bash
+# Basic installation
+pip install -e .
+
+# With dev dependencies
+pip install -e ".[dev]"
+
+# With Playwright support
+pip install -e ".[playwright]"
 playwright install chromium
 ```
 
@@ -90,153 +80,165 @@ playwright install chromium
 
 ## Features
 
-- 🧹 **Semantic filtering** - Removes scripts, styles, hidden elements automatically
-- 📉 **Token reduction** - 60% average reduction in token count
-- 🎯 **Structure preservation** - Maintains DOM hierarchy in clean format
-- 🔍 **Element lookup** - Access original DOM elements by their generated IDs
-- 📊 **Token counting** - Built-in token counting with tiktoken
-- 🎛️ **Configurable filtering** - Fine-tune visibility and semantic filters
-- 📦 **Multiple input formats** - Support for HTML strings and CDP snapshots
-- 🧩 **Smart chunking** - Split large DOMs with continuation markers (`...`) and parent context for seamless chunk boundaries
+- Semantic filtering - Removes scripts, styles, hidden elements
+- Token reduction - 60% average reduction in token count
+- Structure preservation - Maintains DOM hierarchy
+- Element lookup - Access elements by generated IDs
+- Token counting - Built-in tiktoken support
+- Configurable filtering - Fine-tune visibility and semantic filters
+- Multiple inputs - HTML strings and CDP snapshots
+- Smart chunking - Split large DOMs with continuation markers
 
 ---
 
-## API
+## Usage
 
 ### Parse HTML
 
 ```python
 from domcontext import DomContext
 
-# Basic parsing
-context = DomContext.from_html(html_string)
+html = '<div><button>Click me</button></div>'
+context = DomContext.from_html(html)
 
-# With custom filter options
-context = DomContext.from_html(
-    html_string,
-    filter_non_visible=True,      # Remove script, style tags
-    filter_css_hidden=True,        # Remove display:none, visibility:hidden
-    filter_zero_dimensions=True,   # Remove zero-width/height elements
-    filter_empty_elements=True,    # Remove empty wrapper divs
-    filter_attributes=True,        # Keep only semantic attributes
-    collapse_wrappers=True         # Collapse single-child wrappers
-)
+print(context.markdown)
+# Output:
+# - div-1
+#   - button-1
+#     - "Click me"
 ```
 
 ### Parse CDP Snapshot
 
 ```python
-# From Chrome DevTools Protocol snapshot
-cdp_snapshot = {
-    'documents': [...],
-    'strings': [...]
-}
+from domcontext import DomContext
 
-context = DomContext.from_cdp(cdp_snapshot)
+# From Playwright/Puppeteer
+cdp_data = await page.cdp_session.send('DOMSnapshot.captureSnapshot', {
+    'computedStyles': [],
+    'includeDOMRects': True
+})
+
+context = DomContext.from_cdp(cdp_data)
+print(context.markdown)
 ```
 
-### Access Context
+### Access Elements
 
 ```python
-# Markdown representation
-markdown = context.markdown
-
-# Token count
-token_count = context.tokens
-
-# Get all interactive elements
-for element in context.elements():
-    print(f"ID: {element.id}")
-    print(f"Tag: {element.tag}")
-    print(f"Text: {element.text}")
-    print(f"Attributes: {element.attributes}")
-
 # Get element by ID
-element = context.get_element("button-1")
-print(element.attributes)  # {'type': 'submit'}
+button = context.get_element('button-1')
+print(button.tag)          # 'button'
+print(button.text)         # 'Click me'
+print(button.attributes)   # {'type': 'submit'}
+print(button.semantic_id)  # 'button-1'
 
-# Get as dictionary
-data = context.to_dict()
+# Get all elements of a type
+buttons = context.elements(tag='button')
+for btn in buttons:
+    print(btn.semantic_id, btn.text)
+
+# Iterate all elements
+for element in context:
+    print(element.tag, element.semantic_id)
 ```
 
 ### Chunking
 
 ```python
-# Split large DOMs into chunks with smart continuation markers
-for chunk in context.chunks(max_tokens=1000, overlap=100):
-    print(f"Chunk tokens: {chunk.tokens}")
+# Split into chunks for RAG
+chunks = context.chunks(
+    max_tokens=500,
+    overlap=50,
+    include_parent_path=True
+)
+
+for chunk in chunks:
+    print(f"Chunk ({chunk.tokens} tokens):")
     print(chunk.markdown)
-
-# Chunks automatically include:
-# - Parent path context (e.g., "- body-1\n  - div-1")
-# - Continuation markers (...) when elements span chunks
-# Example: "- button-1 (type="submit" ...)" → continues in next chunk
-
-# Disable parent path if needed
-for chunk in context.chunks(max_tokens=1000, overlap=100, include_parent_path=False):
-    print(chunk.markdown)  # No parent context
+    print("---")
 ```
 
-### Custom Tokenizer
+### Token Counting
 
 ```python
-from domcontext import DomContext, Tokenizer
+print(f"Tokens: {context.tokens}")
 
-class CustomTokenizer(Tokenizer):
-    def count_tokens(self, text: str) -> int:
-        # Your custom token counting logic
-        return len(text.split())
+# Use custom tokenizer
+from domcontext import TiktokenTokenizer
 
-context = DomContext.from_html(html, tokenizer=CustomTokenizer())
+tokenizer = TiktokenTokenizer(model="gpt-4")
+context = DomContext.from_html(html, tokenizer=tokenizer)
 ```
 
-### Playwright Utilities (Optional)
-
-Capture CDP snapshots directly from live browser sessions:
+### Filtering Options
 
 ```python
-from playwright.async_api import async_playwright
-from domcontext import DomContext
-from domcontext.utils import capture_snapshot
-
-async def main():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
-        await page.goto('https://example.com')
-
-        # Capture CDP snapshot from live page
-        snapshot = await capture_snapshot(page)
-
-        # Parse into DomContext
-        context = DomContext.from_cdp(snapshot)
-        print(context.markdown)
-
-        await browser.close()
-
-# Run with: python -m asyncio script.py
+# Disable specific filters
+context = DomContext.from_html(
+    html,
+    filter_non_visible_tags=True,   # Remove script, style, head
+    filter_css_hidden=True,          # Remove display:none, visibility:hidden
+    filter_zero_dimensions=True,     # Remove zero-size elements
+    filter_attributes=True,          # Keep only semantic attributes
+    filter_empty=True,               # Remove empty nodes
+    collapse_wrappers=True           # Collapse single-child wrappers
+)
 ```
-
-**Note:** Requires installation with `pip install domcontext[playwright]`
 
 ---
 
 ## Architecture
 
-The library uses a multi-stage filtering pipeline:
+Built on the [domnode](https://github.com/steve-z-wang/domnode) library for core DOM operations.
 
-1. **Parse** - HTML/CDP → DomIR (complete DOM tree with all data)
-2. **Visibility Filter** - Remove non-visible elements (optional flags)
-   - Non-visible tags (script, style, head)
-   - CSS hidden elements (display:none, visibility:hidden)
-   - Zero-dimension elements
-3. **Semantic Filter** - Extract semantic information (optional flags)
-   - Convert to SemanticIR
-   - Filter to semantic attributes only
-   - Remove empty nodes
-   - Collapse wrapper divs
-   - Generate readable IDs
-4. **Output** - SemanticIR → Markdown/JSON
+**Pipeline:**
+
+1. **Parse** - HTML/CDP to domnode.Node tree (via domnode)
+2. **Filter** - Apply visibility and semantic filters (via domnode)
+3. **Enhance** - Add semantic IDs (button-1, input-2, etc.)
+4. **Serialize** - Convert to markdown/JSON for LLM context
+
+**Dependencies:**
+
+- **domnode** - DOM parsing, filtering, and tree operations
+- **tiktoken** - Token counting for LLM context windows
+
+---
+
+## API Reference
+
+### DomContext
+
+**Class Methods:**
+- `DomContext.from_html(html, **filters)` - Parse HTML string
+- `DomContext.from_cdp(cdp_data, **filters)` - Parse CDP snapshot
+
+**Properties:**
+- `context.markdown` - Markdown representation (cached)
+- `context.tokens` - Token count (cached)
+
+**Methods:**
+- `context.get_element(id)` - Get element by semantic ID
+- `context.elements(tag=None)` - Get all elements, optionally filtered by tag
+- `context.chunks(max_tokens, overlap, include_parent_path)` - Split into chunks
+
+### DomNode
+
+Wrapper around domnode.Node with additional properties:
+
+- `node.tag` - HTML tag name
+- `node.text` - Text content
+- `node.attributes` - Element attributes
+- `node.semantic_id` - Generated ID (button-1, input-2, etc.)
+- `node.backend_node_id` - CDP backend node ID (if from CDP)
+- `node.parent` - Parent element
+- `node.children` - Child elements
+
+### Chunk
+
+- `chunk.markdown` - Chunk markdown content
+- `chunk.tokens` - Token count
 
 ---
 
@@ -248,33 +250,30 @@ pytest
 
 # Run with coverage
 pytest --cov=domcontext --cov-report=html
-
-# Run specific test suite
-pytest tests/unit/parsers/
-pytest tests/unit/filters/
-pytest tests/unit/ir/
 ```
 
 **Test Coverage:**
-- 188 tests passing
-- HTML Parser (13 tests)
-- CDP Parser (12 tests)
-- DomIR Layer (27 tests)
-- SemanticIR Layer (34 tests)
-- Visibility Filters (43 tests)
-- Semantic Filters (28 tests)
-- Chunker (15 tests)
-- Tokenizers (13 tests)
-- Smoke tests (3 tests)
+- 16 integration tests covering public API
+- HTML and CDP parsing
+- Filtering pipeline
+- Element access
+- Chunking and tokenization
 
 ---
 
 ## Use Cases
 
-- **Web automation agents** - Provide clean DOM context to LLMs for element selection
-- **Web scraping** - Extract structured content from complex pages
-- **Testing** - Generate clean snapshots of DOM state
-- **Accessibility** - Extract semantic structure from pages
+**Web Automation**
+Provide clean DOM context to LLM agents for element selection and interaction.
+
+**RAG for Websites**
+Build vector indexes from web pages with proper chunking and semantic structure.
+
+**Content Extraction**
+Extract only visible, meaningful content from complex web pages.
+
+**Testing**
+Validate web page structure and content for automated testing.
 
 ---
 
@@ -284,77 +283,30 @@ MIT
 
 ---
 
-## Examples
+## Related Projects
 
-Check out the interactive Jupyter notebooks in `examples/`:
-
-- **`simple_demo.ipynb`** - Quick start guide with Google search example
-  - Element lookup by ID
-  - Chunking demonstration
-  - Perfect for beginners
-
-- **`advanced_demo.ipynb`** - Advanced features showcase
-  - Custom filters and tokenizers
-  - Element iteration and statistics
-  - LLM prompt generation
-  - Production patterns
-
-Run with:
-```bash
-jupyter notebook examples/simple_demo.ipynb
-```
+- [domnode](https://github.com/steve-z-wang/domnode) - DOM parsing and filtering library
+- [natural-selector](https://github.com/steve-z-wang/natural-selector) - Natural language element selection with RAG
 
 ---
 
-## Development
+## Changelog
 
-```bash
-# Install dev dependencies
-pip install -e ".[dev]"
+### 0.2.0 (2025-01-19)
+- **Breaking:** Migrated to domnode library for core DOM operations
+- Eliminated ~1000 lines of duplicate parser/filter code
+- Simplified architecture from 3 layers to 1 (domnode.Node)
+- Maintained full backward compatibility in public API
+- All 16 integration tests passing
 
-# Run tests
-pytest
+### 0.1.3 (2025-01-18)
+- Improved chunking with continuation markers
+- Better handling of deeply nested structures
+- 188 unit tests covering internal implementation
 
-# Format code
-black src/ tests/
-
-# Lint
-ruff check src/ tests/
-```
-
----
-
-## TODO
-
-### Collapsing Improvements
-
-1. **Collapse text-wrapping elements** - Improve wrapper collapsing to also collapse elements that only wrap text (not just elements that wrap other elements). Currently, `<a><span>text</span></a>` keeps the `span`, but it should be collapsed to `<a>text</a>` if the span has no attributes. Exception: Don't collapse interactive elements (button, input, a, select, textarea, etc.) even when they only wrap text, as these are semantically meaningful.
-
-### Evaluation & Benchmarking
-
-2. **Mind2Web dataset evaluation** - Conduct comprehensive testing on the [Mind2Web dataset](https://osu-nlp-group.github.io/Mind2Web/) to evaluate DOM context quality, token reduction rates, and element selection accuracy across diverse real-world websites. Report will include performance metrics, edge cases discovered, and comparison with baseline HTML parsing.
-
----
-
-## Recently Completed
-
-### ✅ Chunking Improvements (v0.1.3)
-
-- **Atomic-level chunking** - Implemented word-by-word text splitting and attribute-by-attribute element splitting with continuation markers (`...`)
-- **Smart chunk boundaries** - Text and attributes now split across chunks seamlessly with proper context preservation
-- **Parent path context** - Each chunk includes parent hierarchy for better LLM understanding
-- **Better token utilization** - No more wasted chunk capacity from oversized single-line elements
-
----
-
-## Contributing
-
-Contributions welcome! Please ensure tests pass and add new tests for new features.
-
-```bash
-# Run full test suite
-pytest -v
-
-# Check coverage
-pytest --cov=domcontext
-```
+### 0.1.0 (2025-01-15)
+- Initial release
+- HTML and CDP parsing
+- Visibility and semantic filtering
+- Markdown serialization
+- Token counting
