@@ -1,5 +1,11 @@
 # domcontext
 
+> ⚠️ **DEPRECATED**: This package has been merged into [webtask](https://github.com/steve-z-wang/webtask).
+>
+> Please use `pip install webtask` instead.
+
+---
+
 Parse DOM trees into clean, LLM-friendly context.
 
 Converts messy HTML/CDP snapshots into structured markdown for LLM context windows. Built on [domnode](https://github.com/steve-z-wang/domnode) for DOM parsing and filtering.
